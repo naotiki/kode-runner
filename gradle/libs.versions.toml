@@ -1,12 +1,15 @@
 [versions]
 coroutines="1.7.3"
+serialization = "1.6.0"
 docker-api = "3.3.3"
 koin = "3.5.0"
 [libraries]
 kotlinx-coroutines = { group="org.jetbrains.kotlinx",name="kotlinx-coroutines-core",version.ref="coroutines"}
-
+kotlinx-serialization = {group="org.jetbrains.kotlinx",name="kotlinx-serialization-json",version.ref="serialization"}
 docker-api = { group = "com.github.docker-java", name = "docker-java", version.ref = "docker-api" }
 docker-api-transport-apache = { group = "com.github.docker-java", name = "docker-java-transport-httpclient5", version.ref = "docker-api" }
 
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin"}
 koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin"}
+[plugins]
+serialization = {id="plugin.serialization",version="1.9.0"}
