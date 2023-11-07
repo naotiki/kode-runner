@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:7.0
+FROM mcr.microsoft.com/dotnet/sdk:7.0-bookworm-slim
 USER root
 
 ARG USERNAME=runner

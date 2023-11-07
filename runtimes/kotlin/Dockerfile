@@ -3,7 +3,7 @@ FROM eclipse-temurin:17-jdk
 ARG KOTLIN_COMPILER_URL="https://github.com/JetBrains/kotlin/releases/download/v1.9.10/kotlin-compiler-1.9.10.zip"
 
 USER root
-RUN apt update && apt install curl wget zip unzip -y
+RUN apt update && apt install wget zip unzip -y
 
 ARG USERNAME=runner
 ARG GROUPNAME=runner
