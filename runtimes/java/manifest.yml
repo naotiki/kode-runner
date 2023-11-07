@@ -1,0 +1,13 @@
+id: java
+name: Java
+sourcefileName: Main.java
+extension: java
+alias:
+  - java
+metaData:
+  version: 17
+  processor: 'Eclipse Temurin JDK'
+commands:
+  prepare: null
+  compile: 'javac Main.java'
+  execute: 'java Main'
