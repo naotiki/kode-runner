@@ -1,0 +1,13 @@
+id: c
+name: C
+sourcefileName: main.c
+extension: c
+alias:
+  - c
+metaData:
+  version: wip
+  processor: wip
+commands:
+  prepare: null
+  compile: 'gcc main.c -o out'
+  execute: './out'

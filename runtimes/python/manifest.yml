@@ -1,0 +1,14 @@
+id: python
+name: Python
+sourcefileName: main.py
+extension: py
+alias:
+  - python
+  - py
+metaData:
+  version: wip
+  processor: wip
+commands:
+  prepare: null
+  compile: null
+  execute: 'python main.py'

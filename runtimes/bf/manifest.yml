@@ -1,0 +1,14 @@
+id: bf
+name: Brainf*ck
+sourcefileName: Main.bf
+extension: bf
+alias:
+  - brainfuck
+  - bf
+metaData:
+  version: wip
+  processor: wip
+commands:
+  prepare: null
+  compile: null
+  execute: 'bf Main.bf'

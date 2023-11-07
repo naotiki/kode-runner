@@ -1,0 +1,14 @@
+id: cpp
+name: C++
+sourcefileName: Main.cpp
+extension: cpp
+alias:
+  - c++
+  - cpp
+metaData:
+  version: wip
+  processor: wip
+commands:
+  prepare: null
+  compile: 'g++ Main.cpp -o out'
+  execute: './out'

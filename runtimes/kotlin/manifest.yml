@@ -1,0 +1,14 @@
+id: kotlin
+name: Kotlin
+sourcefileName: Main.kt
+extension: kt
+alias:
+  - kotlin
+  - kt
+metaData:
+  version: 1.9.10
+  processor: JVM
+commands:
+  prepare: null
+  compile: 'kotlinc -include-runtime Main.kt -d out.jar'
+  execute: 'java -jar out.jar'

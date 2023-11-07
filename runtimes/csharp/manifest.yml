@@ -1,0 +1,14 @@
+id: csharp
+name: しーしゃーぷ
+sourcefileName: Program.cs
+extension: cs
+alias:
+  - csharp
+  - cs
+metaData:
+  version: wip
+  processor: wip
+commands:
+  prepare: null
+  compile: null
+  execute: 'dotnet run'

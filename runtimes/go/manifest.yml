@@ -1,0 +1,13 @@
+id: go
+name: Go
+sourcefileName: main.go
+extension: go
+alias:
+  - go
+metaData:
+  version: wip
+  processor: wip
+commands:
+  prepare: null
+  compile: null
+  execute: 'go run main.go'
