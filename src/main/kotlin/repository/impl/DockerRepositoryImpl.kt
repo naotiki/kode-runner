@@ -12,6 +12,7 @@ class DockerRepositoryImpl(private val dockerApi: DockerClient) : DockerReposito
     private val hostConfig: HostConfig = HostConfig.newHostConfig().apply {
         withMemory(MEMORY_MAX_B)
         withNanoCPUs(NANOCPU)
+        withStorageOpt(mutableMapOf("size" to "2G"))
     }
 
     override fun ping() {
