@@ -12,11 +12,23 @@ repositories {
 }
 
 dependencies {
+    implementation(libs.ktor.core)
+    implementation(libs.ktor.netty)
+    implementation(libs.ktor.websockets)
+    implementation(libs.ktor.contentnegotiation)
+    implementation(libs.ktor.serialization.json)
+    implementation(libs.ktor.serialization.cbor)
+    implementation(libs.ktor.swagger)
+    implementation(libs.slf4j)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines)
     // https://mvnrepository.com/artifact/com.github.docker-java/docker-java
     implementation(libs.docker.api)
     implementation(libs.docker.api.transport.apache)
     implementation(libs.koin.core)
+    implementation(libs.koin.ktor)
+    implementation(libs.yamlkt)
+    implementation(libs.nanoid)
 
     testImplementation(libs.koin.test)
     testImplementation(kotlin("test"))
