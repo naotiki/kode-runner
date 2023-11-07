@@ -6,10 +6,12 @@ import com.github.dockerjava.api.model.*
 import repository.DockerRepository
 import java.io.File
 private const val SESSION_PATH="/work/session/"
+private const val MEMORY_MAX_B:Long =  500/*MB*/*1024*1024
+private const val NANOCPU:Long = 100000000//0.1 CPU
 class DockerRepositoryImpl(private val dockerApi: DockerClient) : DockerRepository {
     private val hostConfig: HostConfig = HostConfig.newHostConfig().apply {
-        withMemory(1024*1024*1024)
-        withNanoCPUs(100000000)
+        withMemory(MEMORY_MAX_B)
+        withNanoCPUs(NANOCPU)
     }
 
     override fun ping() {
@@ -25,7 +27,7 @@ class DockerRepositoryImpl(private val dockerApi: DockerClient) : DockerReposito
         dockerApi.removeContainerCmd(containerId).exec()
     }
 
-    // 自動でcleanupされる
+    // 失敗で自動でcleanupされる
     override fun prepareContainer(imageId:String, copySourceDir:File):String{
         val containerId = dockerApi.createContainerCmd(imageId).withHostConfig(hostConfig).withTty(true).exec().id
         try {
