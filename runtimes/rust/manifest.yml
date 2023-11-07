@@ -11,4 +11,4 @@ metaData:
 commands:
   prepare: null
   compile: 'rustc main.rs'
-  execute: './mainS'
+  execute: './main'
