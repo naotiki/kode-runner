@@ -32,8 +32,8 @@ class RuntimeRepositoryImpl(private val directory: File) : RuntimeRepository {
     }
 
     init {
-        containerRuntimeMap = generateRuntimeList()
         directory.mkdir()
+        containerRuntimeMap = generateRuntimeList()
     }
 
     override fun listContainerRuntimes():List<ContainerRuntime>{
