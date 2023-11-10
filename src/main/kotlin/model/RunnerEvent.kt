@@ -28,7 +28,7 @@ sealed interface RunnerEvent {
 sealed class RunnerError(message: String?=null) : Throwable(message) {
     abstract val phase: RunPhase
 
-    class Timeout(override val phase: RunPhase) : RunnerError()
+    data class Timeout(override val phase: RunPhase) : RunnerError()
 
-    class CmdError(override val phase: RunPhase, reason:String) : RunnerError(reason)
+    data class CmdError(override val phase: RunPhase, val reason:String) : RunnerError(reason)
 }
