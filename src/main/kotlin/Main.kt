@@ -49,8 +49,6 @@ private fun Application.module() {
     }
     install(WebSockets) {
         contentConverter= KotlinxWebsocketSerializationConverter(Cbor)
-        pingPeriod = Duration.ofSeconds(15)
-        timeout = Duration.ofSeconds(15)
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }
