@@ -1,5 +1,7 @@
 package route
 
+import com.github.dockerjava.api.async.ResultCallback.Adapter
+import com.github.dockerjava.api.model.BuildResponseItem
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -7,18 +9,23 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import model.RespondSession.Companion.toRespondSession
 import model.RunnerError
 import model.RunnerEvent
 import org.koin.ktor.ext.inject
+import repository.DockerRepository
 import repository.RuntimeRepository
 import repository.SessionRepository
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.LinkedHashSet
+import kotlin.concurrent.thread
 
 fun Routing.appRoute() {
     val runtimeRepository by inject<RuntimeRepository>()
+    val dockerRepository by inject<DockerRepository>()
     route("/runtimes") {
         get {
             call.respond(runtimeRepository.listRuntimes())
@@ -30,6 +37,22 @@ fun Routing.appRoute() {
                 return@get
             }
             call.respond(runtime)
+        }
+        post("/rebuild"){
+            runtimeRepository.regenerateRuntimeList()
+            val adaptors= mutableListOf<Adapter<BuildResponseItem>>()
+            runtimeRepository.listContainerRuntimes().forEach {
+                adaptors.add(dockerRepository.buildImage(it.dockerfile,it.id))
+            }
+            adaptors.forEach {
+                it.awaitCompletion()
+            }
+            call.respond(HttpStatusCode.OK)
+            println("End")
+        }
+        post("/refresh"){
+            runtimeRepository.regenerateRuntimeList()
+            call.respond(runtimeRepository.listRuntimes())
         }
     }
     val sessionRepository by inject<SessionRepository>()
@@ -54,13 +77,16 @@ fun Routing.appRoute() {
         val sessionId = call.parameters["sessionId"]
         try {
             sessionRepository.run(sessionId!!) {
-                sendSerialized(it)
+                println(it)
+                launch {
+                    sendSerialized(it)
+                }
             }
         } catch (e: RunnerError) {
-            sendSerialized(RunnerEvent.Abort(e.phase,e.localizedMessage))
+            sendSerialized(RunnerEvent.Abort(e.phase,e.message.toString()))
             println("Error:$e")
         } catch (e: Exception) {
-            println(e.localizedMessage)
+            println(e.message.toString())
         } finally {
             println("Removing $thisConnection!")
             connections -= thisConnection

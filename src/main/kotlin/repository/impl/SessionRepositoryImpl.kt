@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.StreamType
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.selects.select
 import model.RunPhase
 import model.RunnerError
 import model.RunnerEvent
@@ -14,6 +15,7 @@ import model.SessionData
 import repository.DockerRepository
 import repository.RuntimeRepository
 import repository.SessionRepository
+import java.io.Closeable
 import java.io.File
 import java.util.*
 
@@ -36,31 +38,22 @@ class SessionRepositoryImpl(
         containerId: String,
         phase: RunPhase,
         command: Array<String>,
-        onEvent: suspend (RunnerEvent) -> Unit,
+        onEvent: (RunnerEvent) -> Unit,
         timeout: Long?
-    ) = coroutineScope{
+    ) {
+        var complated = false
         onEvent(RunnerEvent.Start(phase))
-        val timer = timeout?.let {
-            launch {
-                delay(it)
-                dockerRepository.cleanup(containerId)
-                sessions.clear()
-                throw RunnerError.Timeout(phase)
-            }
-        }
-        dockerRepository.execCmdContainer(
+        val (execId, adapter) = dockerRepository.execCmdContainer(
             containerId,
             command,
             object : Adapter<Frame>() {
                 override fun onNext(frame: Frame) {
                     super.onNext(frame)
-                    runBlocking {
-                        when (frame.streamType) {
-                            StreamType.STDOUT -> onEvent(RunnerEvent.Log(phase, frame.payload.decodeToString()))
-                            StreamType.STDERR -> onEvent(RunnerEvent.ErrorLog(phase, frame.payload.decodeToString()))
-                            else -> {
-                                onEvent(RunnerEvent.Log(phase, frame.payload.decodeToString()))
-                            }
+                    when (frame.streamType) {
+                        StreamType.STDOUT -> onEvent(RunnerEvent.Log(phase, frame.payload.decodeToString()))
+                        StreamType.STDERR -> onEvent(RunnerEvent.ErrorLog(phase, frame.payload.decodeToString()))
+                        else -> {
+                            onEvent(RunnerEvent.Log(phase, frame.payload.decodeToString()))
                         }
                     }
 
@@ -68,19 +61,41 @@ class SessionRepositoryImpl(
 
                 override fun onError(throwable: Throwable) {
                     super.onError(throwable)
-                    timer?.cancel()
-                    throw RunnerError.CmdError(phase, throwable.localizedMessage)
+                    throw RunnerError.CmdError(phase, throwable.message.toString())
                 }
 
                 override fun onComplete() {
                     super.onComplete()
-                    timer?.cancel()
+                    complated = true
                 }
-            }).awaitCompletion()
+            })
+        timeout?.let {
+            coroutineScope {
+                launch {
+
+                }
+            }
+            kotlin.runCatching {
+                withTimeout(it) {
+                    withContext(Dispatchers.IO){
+                        adapter.awaitCompletion()
+                    }
+                }
+            }.onFailure {
+                println("Timeout!")
+                throw RunnerError.Timeout(phase)
+            }
+        } ?: adapter.awaitCompletion()
+
+
+        val exitCode = dockerRepository.inspectExitCodeExec(execId)
+        if (exitCode != 0L) {
+            throw RunnerError.CmdError(phase, "${command.joinToString()} が終了コード $exitCode で終了しました")
+        }
         onEvent(RunnerEvent.Finish(phase))
     }
 
-    override suspend fun run(sessionId: String, onEvent: suspend (RunnerEvent) -> Unit) {
+    override suspend fun run(sessionId: String, onEvent: (RunnerEvent) -> Unit) {
         val (_, sessionDir, _, containerRuntime) = sessions[sessionId] ?: throw IllegalArgumentException()
 
         val containerId = dockerRepository.prepareContainer(containerRuntime.id, sessionDir)
@@ -96,8 +111,15 @@ class SessionRepositoryImpl(
                 )
             }
             runPhase(containerId, RunPhase.Execute, execute.split(" ").toTypedArray(), onEvent, EXEC_TIMEOUT_MILLIS)
+        } catch (e: Throwable) {
+            println(e.localizedMessage)
+            throw e
         } finally {
-            dockerRepository.cleanup(containerId)
+            withContext(Dispatchers.IO) {
+                launch {
+                    dockerRepository.cleanup(containerId)
+                }
+            }
         }
     }
 
