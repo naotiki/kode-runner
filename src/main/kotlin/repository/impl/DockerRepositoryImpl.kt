@@ -45,9 +45,15 @@ class DockerRepositoryImpl(private val dockerApi: DockerClient) : DockerReposito
     override fun inspectExitCodeExec(execId: String): Long {
         return dockerApi.inspectExecCmd(execId).exec().exitCodeLong
     }
-    override fun execCmdContainer(containerId: String, command:Array<String>, adapter: Adapter<Frame>): Pair<String,Adapter<Frame>> {
-        val r = dockerApi.execCreateCmd(containerId).withCmd(*command).withAttachStdout(true).withAttachStderr(true).exec()
-        return r.id to dockerApi.execStartCmd(r.id).exec(adapter)
+    override fun execCmdContainer(containerId: String, command:Array<String>, adapter: Adapter<Frame>,inputFile: File?): Pair<String,Adapter<Frame>> {
+        val r = dockerApi.execCreateCmd(containerId)
+            .withCmd(*command)
+            .withAttachStdout(true)
+            .withAttachStdin(inputFile!=null)
+            .withAttachStderr(true).exec()
+        return r.id to dockerApi.execStartCmd(r.id)
+            .withStdIn(inputFile?.inputStream())
+            .exec(adapter)
     }
 
     override fun buildImage(dockerFile: File, imageTag: String): Adapter<BuildResponseItem> {

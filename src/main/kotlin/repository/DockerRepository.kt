@@ -19,6 +19,7 @@ interface DockerRepository {
     fun execCmdContainer(
         containerId: String,
         command: Array<String>,
-        adapter: Adapter<Frame>
+        adapter: Adapter<Frame>,
+        inputFile: File?
     ): Pair<String, Adapter<Frame>>
 }

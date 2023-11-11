@@ -4,10 +4,7 @@ import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.github.dockerjava.api.async.ResultCallback.Adapter
 import com.github.dockerjava.api.model.Frame
 import com.github.dockerjava.api.model.StreamType
-import io.ktor.util.cio.*
-import io.ktor.utils.io.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.selects.select
 import model.RunPhase
 import model.RunnerError
 import model.RunnerEvent
@@ -15,13 +12,14 @@ import model.SessionData
 import repository.DockerRepository
 import repository.RuntimeRepository
 import repository.SessionRepository
-import java.io.Closeable
 import java.io.File
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 const val COMPILE_TIMEOUT_MILLIS: Long = 120 * 1000
 
 const val EXEC_TIMEOUT_MILLIS: Long = 10 * 1000
+const val INPUT_FILE = "input"
 
 class SessionRepositoryImpl(
     private val directory: File,
@@ -31,7 +29,7 @@ class SessionRepositoryImpl(
     SessionRepository {
     override val sessions: MutableMap<String, SessionData> = Collections.synchronizedMap(LinkedHashMap())
     override fun clean(sessionId: String) {
-        sessions[sessionId]?.sessionDir?.delete()
+        sessions[sessionId]?.sessionDir?.deleteRecursively()
     }
 
     private suspend fun runPhase(
@@ -39,7 +37,8 @@ class SessionRepositoryImpl(
         phase: RunPhase,
         command: Array<String>,
         onEvent: (RunnerEvent) -> Unit,
-        timeout: Long?
+        timeout: Long?,
+        inputFile: File? = null
     ) {
         var complated = false
         onEvent(RunnerEvent.Start(phase))
@@ -68,21 +67,10 @@ class SessionRepositoryImpl(
                     super.onComplete()
                     complated = true
                 }
-            })
+            },inputFile)
         timeout?.let {
-            coroutineScope {
-                launch {
+            if(!adapter.awaitCompletion(it,TimeUnit.MILLISECONDS)){
 
-                }
-            }
-            kotlin.runCatching {
-                withTimeout(it) {
-                    withContext(Dispatchers.IO){
-                        adapter.awaitCompletion()
-                    }
-                }
-            }.onFailure {
-                println("Timeout!")
                 throw RunnerError.Timeout(phase)
             }
         } ?: adapter.awaitCompletion()
@@ -90,13 +78,13 @@ class SessionRepositoryImpl(
 
         val exitCode = dockerRepository.inspectExitCodeExec(execId)
         if (exitCode != 0L) {
-            throw RunnerError.CmdError(phase, "${command.joinToString()} が終了コード $exitCode で終了しました")
+            throw RunnerError.CmdError(phase, "${command.joinToString(" ")} が終了コード $exitCode で終了しました")
         }
         onEvent(RunnerEvent.Finish(phase))
     }
 
     override suspend fun run(sessionId: String, onEvent: (RunnerEvent) -> Unit) {
-        val (_, sessionDir, _, containerRuntime) = sessions[sessionId] ?: throw IllegalArgumentException()
+        val (_, sessionDir, _, containerRuntime,inputFile) = sessions[sessionId] ?: throw IllegalArgumentException()
 
         val containerId = dockerRepository.prepareContainer(containerRuntime.id, sessionDir)
         val (prepare, compile, execute) = containerRuntime.runtimeData.commands
@@ -110,9 +98,9 @@ class SessionRepositoryImpl(
                     COMPILE_TIMEOUT_MILLIS
                 )
             }
-            runPhase(containerId, RunPhase.Execute, execute.split(" ").toTypedArray(), onEvent, EXEC_TIMEOUT_MILLIS)
+            runPhase(containerId, RunPhase.Execute, execute.split(" ").toTypedArray(), onEvent, EXEC_TIMEOUT_MILLIS,inputFile)
         } catch (e: Throwable) {
-            println(e.localizedMessage)
+            println("msg:"+e.message)
             throw e
         } finally {
             withContext(Dispatchers.IO) {
@@ -127,7 +115,7 @@ class SessionRepositoryImpl(
         directory.mkdir()
     }
 
-    override suspend fun addQueue(identifier: String, srcReadChannel: ByteReadChannel): SessionData? {
+    override suspend fun addQueue(identifier: String, src: ByteArray, input: ByteArray?): SessionData? {
         val runtime = runtimeRepository.searchContainerRuntime(identifier)
         var sessionData: SessionData? = null
         if (runtime != null) {
@@ -138,13 +126,23 @@ class SessionRepositoryImpl(
             if (!withContext(Dispatchers.IO) {
                     sourceFile.createNewFile()
                 }) throw FileSystemException(sourceFile, reason = "createSource failed")
-            srcReadChannel.copyTo(sourceFile.writeChannel())
+            sourceFile.writeBytes(src)
+
+            val inputFile = input?.let {
+                sessionDir.resolve(INPUT_FILE).apply {
+                    if (!withContext(Dispatchers.IO) {
+                            createNewFile()
+                        }) throw FileSystemException(sourceFile, reason = "createInput failed")
+                    writeBytes(it)
+                }
+            }
 
             sessionData = SessionData(
                 sessionId,
                 sessionDir,
                 sourceFile,
-                runtime
+                runtime,
+                inputFile
             )
             sessions[sessionId] = sessionData
         }

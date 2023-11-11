@@ -7,5 +7,6 @@ data class SessionData(
     val sessionId: String,
     val sessionDir:File,
     val sourceFile: File,
-    val containerRuntime: ContainerRuntime
+    val containerRuntime: ContainerRuntime,
+    val inputFile:File?=null
 )

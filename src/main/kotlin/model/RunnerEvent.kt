@@ -1,5 +1,6 @@
 package model
 
+import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
 
 enum class RunPhase{
@@ -22,13 +23,14 @@ sealed interface RunnerEvent {
     data class Finish(override val phase: RunPhase):RunnerEvent
 
     @Serializable
-    data class Abort(override val phase: RunPhase,val reason:String):RunnerEvent
+    data class Abort(override val phase: RunPhase,val error:RunnerError):RunnerEvent
 }
 
-sealed class RunnerError(message: String?=null) : Throwable(message) {
+@Serializable
+sealed class RunnerError() : Throwable() {
     abstract val phase: RunPhase
-
+    @Serializable
     data class Timeout(override val phase: RunPhase) : RunnerError()
-
-    data class CmdError(override val phase: RunPhase, val reason:String) : RunnerError(reason)
+    @Serializable
+    data class CmdError(override val phase: RunPhase, val reason:String) : RunnerError()
 }

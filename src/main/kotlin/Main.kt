@@ -13,6 +13,8 @@ import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.cbor.Cbor
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
 import model.Commands
 import model.RuntimeData
 import model.MetaData
@@ -49,8 +51,6 @@ private fun Application.module() {
     }
     install(WebSockets) {
         contentConverter= KotlinxWebsocketSerializationConverter(Cbor)
-        maxFrameSize = Long.MAX_VALUE
-        masking = false
     }
     routing {
         swaggerUI("swagger")
