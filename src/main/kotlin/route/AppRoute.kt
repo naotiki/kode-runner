@@ -63,7 +63,7 @@ fun Routing.appRoute() {
             call.respond(HttpStatusCode.OK)
             println("End")
         }
-        post("/refresh") {
+        post("/reload") {
             runtimeRepository.regenerateRuntimeList()
             call.respond(runtimeRepository.listRuntimes())
         }
