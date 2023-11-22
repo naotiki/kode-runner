@@ -16,6 +16,7 @@ import model.RespondSession.Companion.toRespondSession
 import model.RunnerError
 import model.RunnerEvent
 import org.koin.ktor.ext.inject
+import repository.ConfigurationRepository
 import repository.DockerRepository
 import repository.RuntimeRepository
 import repository.SessionRepository
@@ -28,7 +29,17 @@ import kotlin.collections.LinkedHashSet
 fun Routing.appRoute() {
     val runtimeRepository by inject<RuntimeRepository>()
     val dockerRepository by inject<DockerRepository>()
-    route("/runtimes") {
+    val configRepository by inject<ConfigurationRepository>()
+    route("/config") {
+        get {
+            call.respond(configRepository.get())
+        }
+        post("/reload") {
+            configRepository.reload()
+            call.respond(HttpStatusCode.OK)
+        }
+    }
+    route("/runtime") {
         get {
             call.respond(runtimeRepository.listRuntimes())
         }
@@ -65,14 +76,14 @@ fun Routing.appRoute() {
             return@post
         }
         val allMultipartData = call.receiveMultipart().readAllParts()
-        println(allMultipartData.map{it.name+it::class.simpleName})
+        println(allMultipartData.map { it.name + it::class.simpleName })
         val src = allMultipartData.get<PartData.FormItem>("src")!!.value
         val input = allMultipartData.get<PartData.FormItem>("input")?.value
         println(src)
         println(input)
-        val sessionData = sessionRepository.addQueue(identifier,src.encodeToByteArray(),input?.encodeToByteArray())
+        val sessionData = sessionRepository.addQueue(identifier, src.encodeToByteArray(), input?.encodeToByteArray())
         if (sessionData == null) {
-            call.respond(HttpStatusCode.NotFound,"Runtime NotFound")
+            call.respond(HttpStatusCode.NotFound, "Runtime NotFound")
             return@post
         }
         call.respond(sessionData.toRespondSession())
@@ -94,7 +105,7 @@ fun Routing.appRoute() {
             sendSerialized<RunnerEvent>(RunnerEvent.Abort(e.phase, e))
             println("Error:$e")
         } catch (e: Exception) {
-            println("a:"+e.message.toString())
+            println("a:" + e.message.toString())
         } finally {
             println("Removing $thisConnection!")
             connections -= thisConnection

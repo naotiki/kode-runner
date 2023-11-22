@@ -7,16 +7,17 @@ yamlkt = "0.13.0"
 ktor = "2.3.5"
 slf4j = "2.0.9"
 nanoid = "2.0.0"
+kotest="5.8.0"
 [libraries]
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+kotlinx-serialization-hocon = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-hocon", version.ref = "serialization" }
+
 docker-api = { group = "com.github.docker-java", name = "docker-java", version.ref = "docker-api" }
 docker-api-transport-apache = { group = "com.github.docker-java", name = "docker-java-transport-httpclient5", version.ref = "docker-api" }
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 koin-ktor = { group = "io.insert-koin", name = "koin-ktor", version.ref = "koin" }
 koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
-
-yamlkt = { group = "net.mamoe.yamlkt", name = "yamlkt", version.ref = "yamlkt" }
 
 ktor-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
 ktor-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
@@ -26,6 +27,8 @@ ktor-serialization-cbor = { group = "io.ktor", name = "ktor-serialization-kotlin
 ktor-swagger = { group = "io.ktor", name = "ktor-server-swagger", version.ref = "ktor" }
 ktor-websockets = { group = "io.ktor", name = "ktor-server-websockets", version.ref = "ktor" }
 
+yamlkt = { group = "net.mamoe.yamlkt", name = "yamlkt", version.ref = "yamlkt" }
 slf4j = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
-
 nanoid = { group = "com.aventrix.jnanoid", name = "jnanoid", version.ref = "nanoid" }
+
+kotest-runner={group="io.kotest",name="kotest-runner-junit5",version.ref="kotest"}

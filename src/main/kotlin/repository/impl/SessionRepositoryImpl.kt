@@ -9,12 +9,14 @@ import model.RunPhase
 import model.RunnerError
 import model.RunnerEvent
 import model.SessionData
+import repository.ConfigurationRepository
 import repository.DockerRepository
 import repository.RuntimeRepository
 import repository.SessionRepository
 import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 const val COMPILE_TIMEOUT_MILLIS: Long = 120 * 1000
 
@@ -24,12 +26,15 @@ const val INPUT_FILE = "input"
 class SessionRepositoryImpl(
     private val directory: File,
     private val runtimeRepository: RuntimeRepository,
-    private val dockerRepository: DockerRepository
+    private val dockerRepository: DockerRepository,
+    private val configRepo: ConfigurationRepository
 ) :
     SessionRepository {
     override val sessions: MutableMap<String, SessionData> = Collections.synchronizedMap(LinkedHashMap())
     override fun clean(sessionId: String) {
-        sessions[sessionId]?.sessionDir?.deleteRecursively()
+        sessions[sessionId]?.run {
+            sessionDir.deleteRecursively()
+        }
     }
 
     private suspend fun runPhase(
@@ -42,6 +47,7 @@ class SessionRepositoryImpl(
     ) {
         var complated = false
         onEvent(RunnerEvent.Start(phase))
+        val logId = AtomicInteger(0)
         val (execId, adapter) = dockerRepository.execCmdContainer(
             containerId,
             command,
@@ -49,10 +55,24 @@ class SessionRepositoryImpl(
                 override fun onNext(frame: Frame) {
                     super.onNext(frame)
                     when (frame.streamType) {
-                        StreamType.STDOUT -> onEvent(RunnerEvent.Log(phase, frame.payload.decodeToString()))
-                        StreamType.STDERR -> onEvent(RunnerEvent.ErrorLog(phase, frame.payload.decodeToString()))
+                        StreamType.STDOUT -> onEvent(
+                            RunnerEvent.Log(
+                                phase,
+                                frame.payload.decodeToString(),
+                                logId.getAndIncrement()
+                            )
+                        )
+
+                        StreamType.STDERR -> onEvent(
+                            RunnerEvent.ErrorLog(
+                                phase,
+                                frame.payload.decodeToString(),
+                                logId.getAndIncrement()
+                            )
+                        )
+
                         else -> {
-                            onEvent(RunnerEvent.Log(phase, frame.payload.decodeToString()))
+                            onEvent(RunnerEvent.Log(phase, frame.payload.decodeToString(), logId.getAndIncrement()))
                         }
                     }
 
@@ -60,16 +80,17 @@ class SessionRepositoryImpl(
 
                 override fun onError(throwable: Throwable) {
                     super.onError(throwable)
-                    throw RunnerError.CmdError(phase, throwable.message.toString())
+                    throwable.printStackTrace()
                 }
 
                 override fun onComplete() {
                     super.onComplete()
                     complated = true
                 }
-            },inputFile)
+            }, inputFile
+        )
         timeout?.let {
-            if(!adapter.awaitCompletion(it,TimeUnit.MILLISECONDS)){
+            if (!adapter.awaitCompletion(it, TimeUnit.MILLISECONDS)) {
 
                 throw RunnerError.Timeout(phase)
             }
@@ -84,9 +105,12 @@ class SessionRepositoryImpl(
     }
 
     override suspend fun run(sessionId: String, onEvent: (RunnerEvent) -> Unit) {
-        val (_, sessionDir, _, containerRuntime,inputFile) = sessions[sessionId] ?: throw IllegalArgumentException()
+        val config=configRepo.get()
+        val sessionData = sessions[sessionId] ?: throw IllegalArgumentException()
+        val (_, sessionDir, _, containerRuntime,  inputFile) = sessionData
 
         val containerId = dockerRepository.prepareContainer(containerRuntime.id, sessionDir)
+        sessions[sessionId] = sessionData.copy(containerId = containerId)
         val (prepare, compile, execute) = containerRuntime.runtimeData.commands
         try {
             if (compile != null) {
@@ -95,12 +119,19 @@ class SessionRepositoryImpl(
                     RunPhase.Compile,
                     compile.split(" ").toTypedArray(),
                     onEvent,
-                    COMPILE_TIMEOUT_MILLIS
+                    config.session.compileMillis,
                 )
             }
-            runPhase(containerId, RunPhase.Execute, execute.split(" ").toTypedArray(), onEvent, EXEC_TIMEOUT_MILLIS,inputFile)
+            runPhase(
+                containerId,
+                RunPhase.Execute,
+                execute.split(" ").toTypedArray(),
+                onEvent,
+                config.session.executeMillis,
+                inputFile
+            )
         } catch (e: Throwable) {
-            println("msg:"+e.message)
+            println("msg:" + e.message)
             throw e
         } finally {
             withContext(Dispatchers.IO) {

@@ -21,6 +21,7 @@ dependencies {
     implementation(libs.ktor.swagger)
     implementation(libs.slf4j)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.hocon)
     implementation(libs.kotlinx.coroutines)
     // https://mvnrepository.com/artifact/com.github.docker-java/docker-java
     implementation(libs.docker.api)
@@ -30,8 +31,9 @@ dependencies {
     implementation(libs.yamlkt)
     implementation(libs.nanoid)
 
-    testImplementation(libs.koin.test)
+  //  testImplementation(libs.koin.test)
     testImplementation(kotlin("test"))
+    testImplementation(libs.kotest.runner)
 }
 
 tasks.test {
@@ -44,4 +46,14 @@ kotlin {
 
 application {
     mainClass.set("MainKt")
+}
+
+distributions{
+    main{
+        contents {
+            from("runtimes/"){
+                into("runtimes/")
+            }
+        }
+    }
 }

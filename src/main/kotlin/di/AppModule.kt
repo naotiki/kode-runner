@@ -6,9 +6,11 @@ import com.github.dockerjava.core.DockerClientImpl
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient
 import com.github.dockerjava.transport.DockerHttpClient
 import org.koin.dsl.module
+import repository.ConfigurationRepository
 import repository.DockerRepository
 import repository.RuntimeRepository
 import repository.SessionRepository
+import repository.impl.ConfigurationRepositoryImpl
 import repository.impl.DockerRepositoryImpl
 import repository.impl.RuntimeRepositoryImpl
 import repository.impl.SessionRepositoryImpl
@@ -17,9 +19,10 @@ import java.time.Duration
 
 
 val appModule = module {
-    single<DockerRepository> { DockerRepositoryImpl(getInstanceDockerClient()) }
+    single<ConfigurationRepository> { ConfigurationRepositoryImpl() }
+    single<DockerRepository> { DockerRepositoryImpl(getInstanceDockerClient(),get()) }
     single<RuntimeRepository> { RuntimeRepositoryImpl(File("runtimes/")) }
-    single<SessionRepository> { SessionRepositoryImpl(File("sessions/"), get(),get()) }
+    single<SessionRepository> { SessionRepositoryImpl(File("sessions/"), get(),get(),get()) }
 }
 
 private fun getInstanceDockerClient(): DockerClient {
