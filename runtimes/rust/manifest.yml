@@ -6,7 +6,7 @@ alias:
   - rust
   - rs
 metaData:
-  version: wip
+  version: 1.73
   processor: wip
 commands:
   prepare: null
