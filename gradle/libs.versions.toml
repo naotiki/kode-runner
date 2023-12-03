@@ -12,6 +12,7 @@ kotest="5.8.0"
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-serialization-hocon = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-hocon", version.ref = "serialization" }
+kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "serialization" }
 
 docker-api = { group = "com.github.docker-java", name = "docker-java", version.ref = "docker-api" }
 docker-api-transport-apache = { group = "com.github.docker-java", name = "docker-java-transport-httpclient5", version.ref = "docker-api" }
@@ -26,7 +27,7 @@ ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlin
 ktor-serialization-cbor = { group = "io.ktor", name = "ktor-serialization-kotlinx-cbor", version.ref = "ktor" }
 ktor-swagger = { group = "io.ktor", name = "ktor-server-swagger", version.ref = "ktor" }
 ktor-websockets = { group = "io.ktor", name = "ktor-server-websockets", version.ref = "ktor" }
-
+ktor-network = { group = "io.ktor", name = "ktor-network", version.ref = "ktor" }
 yamlkt = { group = "net.mamoe.yamlkt", name = "yamlkt", version.ref = "yamlkt" }
 slf4j = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
 nanoid = { group = "com.aventrix.jnanoid", name = "jnanoid", version.ref = "nanoid" }

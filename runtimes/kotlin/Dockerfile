@@ -1,10 +1,12 @@
 FROM eclipse-temurin:17-jdk
-
+# 変数
 ARG KOTLIN_COMPILER_URL="https://github.com/JetBrains/kotlin/releases/download/v1.9.10/kotlin-compiler-1.9.10.zip"
 
+# 依存パッケージインストール
 USER root
 RUN apt update && apt install wget zip unzip -y
 
+# ユーザー設定
 ARG USERNAME=runner
 ARG GROUPNAME=runner
 ARG UID=1000
@@ -12,16 +14,13 @@ ARG GID=1000
 RUN groupadd -g $GID $GROUPNAME && \
     useradd -m -s /bin/bash -u $UID -g $GID $USERNAME
 
-RUN mkdir /work && \
-    mkdir /work/tools && \
-    mkdir -m 777 /work/session/ && \
-    chmod +t /work/session
-WORKDIR /work/tools
-
+# その他実行環境インストールなど(Option)
+WORKDIR /opt
 RUN wget $KOTLIN_COMPILER_URL -O kotlin.zip && \
     unzip kotlin.zip
-ENV PATH $PATH:/work/tools/kotlinc/bin
+ENV PATH $PATH:/opt/kotlinc/bin
 
+# 初期ユーザー設定
 USER $USERNAME
-WORKDIR /work/session
+WORKDIR /home/$USERNAME
 CMD ["/bin/bash"]

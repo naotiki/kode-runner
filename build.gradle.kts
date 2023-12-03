@@ -14,6 +14,7 @@ repositories {
 dependencies {
     implementation(libs.ktor.core)
     implementation(libs.ktor.netty)
+    implementation(libs.ktor.network)
     implementation(libs.ktor.websockets)
     implementation(libs.ktor.contentnegotiation)
     implementation(libs.ktor.serialization.json)
@@ -22,6 +23,7 @@ dependencies {
     implementation(libs.slf4j)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.hocon)
+    implementation(libs.kotlinx.serialization.protobuf)
     implementation(libs.kotlinx.coroutines)
     // https://mvnrepository.com/artifact/com.github.docker-java/docker-java
     implementation(libs.docker.api)

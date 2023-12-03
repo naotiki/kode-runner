@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import model.RespondSession.Companion.toRespondSession
 import model.RunnerError
 import model.RunnerEvent
+import model.RunnerHostInfo
 import org.koin.ktor.ext.inject
 import repository.ConfigurationRepository
 import repository.DockerRepository
@@ -22,6 +23,7 @@ import repository.RuntimeRepository
 import repository.SessionRepository
 import util.get
 import java.lang.IllegalStateException
+import java.net.InetAddress
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.LinkedHashSet
@@ -30,6 +32,13 @@ fun Routing.appRoute() {
     val runtimeRepository by inject<RuntimeRepository>()
     val dockerRepository by inject<DockerRepository>()
     val configRepository by inject<ConfigurationRepository>()
+    route("/host"){
+        get {
+            call.respond(
+                RunnerHostInfo(InetAddress.getLocalHost().hostName,configRepository.get())
+            )
+        }
+    }
     route("/config") {
         get {
             call.respond(configRepository.get())

@@ -15,13 +15,13 @@ data class RuntimeConfig(
     val memory: DataSize = MEMORY,
     val nanoCpu: Long = NANOCPU,
     val pids: Long = PIDS,
-    val diskQuota: DataSize = DISK_QUOTA
+    val diskQuota: DataSize? = DISK_QUOTA_SIZE
 ) {
     companion object Default {
         private val MEMORY: DataSize = DataSize(1, GB)
         private const val NANOCPU: Long = 1000000000//1.0 CPU
         private const val PIDS: Long = 256
-        private val DISK_QUOTA: DataSize = DataSize(512, MB)
+        private val DISK_QUOTA_SIZE: DataSize = DataSize(256, MB)
     }
 }
 

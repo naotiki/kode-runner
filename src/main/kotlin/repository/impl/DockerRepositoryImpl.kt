@@ -3,20 +3,23 @@ package repository.impl
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.async.ResultCallback.Adapter
 import com.github.dockerjava.api.model.*
-import com.typesafe.config.ConfigFactory
+import data.DataSize
 import repository.ConfigurationRepository
 import repository.DockerRepository
 import java.io.File
 
 private const val DOCKER_IMAGE_PREFIX = "code-runner/"
-private const val SESSION_PATH = "/work/session/"
+private const val SESSION_PATH = "/home/runner/work"
 
-
-class DockerRepositoryImpl(private val dockerApi: DockerClient, private val configRepo: ConfigurationRepository) : DockerRepository {
+class DockerRepositoryImpl(private val dockerApi: DockerClient, private val configRepo: ConfigurationRepository) :
+    DockerRepository {
     private fun getHostConfig(): HostConfig = HostConfig.newHostConfig().apply {
         val (runtime) = configRepo.get()
+        withNetworkMode("none")
         withMemory(runtime.memory.bytes)
-        withDiskQuota(runtime.diskQuota.bytes)
+        runtime.diskQuota?.let {
+            withStorageOpt(mapOf("size" to it.toString()))
+        }
         withNanoCPUs(runtime.nanoCpu)
         withPidsLimit(runtime.pids)
     }
@@ -31,7 +34,7 @@ class DockerRepositoryImpl(private val dockerApi: DockerClient, private val conf
 
     override fun cleanup(containerId: String) {
         val shouldForce = kotlin.runCatching { dockerApi.stopContainerCmd(containerId).exec() }.isFailure
-        kotlin.runCatching{ dockerApi.removeContainerCmd(containerId).withForce(shouldForce).exec() }.onFailure {
+        kotlin.runCatching { dockerApi.removeContainerCmd(containerId).withForce(shouldForce).exec() }.onFailure {
             dockerApi.removeContainerCmd(containerId).withForce(true).exec()
         }
     }
