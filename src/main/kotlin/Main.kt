@@ -56,12 +56,6 @@ private fun Application.module() {
     }
     install(WebSockets) {
         contentConverter = KotlinxWebsocketSerializationConverter(Cbor)
-        extensions {
-            install(WebSocketDeflateExtension) {
-                compressionLevel = Deflater.DEFAULT_COMPRESSION
-                compressIfBiggerThan(bytes = 4 * 1024)
-            }
-        }
     }
     routing {
         swaggerUI("swagger")
