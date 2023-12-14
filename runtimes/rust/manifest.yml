@@ -7,7 +7,7 @@ alias:
   - rs
 metaData:
   version: 1.73
-  processor: wip
+  processor: "?"
 commands:
   prepare: null
   compile: 'rustc main.rs'

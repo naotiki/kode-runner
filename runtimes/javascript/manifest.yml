@@ -1,0 +1,14 @@
+id: javascript
+name: JavaScript
+sourcefileName: main.js
+extension: js
+alias:
+  - javascript
+  - js
+metaData:
+  version: 18
+  processor: Node.js
+commands:
+  prepare: null
+  compile: null
+  execute: 'node ./main.js'

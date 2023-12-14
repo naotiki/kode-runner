@@ -6,8 +6,8 @@ alias:
   - python
   - py
 metaData:
-  version: wip
-  processor: wip
+  version: "?"
+  processor: "?"
 commands:
   prepare: null
   compile: null

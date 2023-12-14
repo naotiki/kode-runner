@@ -1,7 +1,11 @@
 FROM eclipse-temurin:17-jdk
+# 変数
 
 USER root
 
+# 依存パッケージインストール
+
+# ユーザー設定
 ARG USERNAME=runner
 ARG GROUPNAME=runner
 ARG UID=1000

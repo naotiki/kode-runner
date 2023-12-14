@@ -2,8 +2,9 @@ FROM eclipse-temurin:17-jdk
 # 変数
 ARG KOTLIN_COMPILER_URL="https://github.com/JetBrains/kotlin/releases/download/v1.9.10/kotlin-compiler-1.9.10.zip"
 
-# 依存パッケージインストール
 USER root
+
+# 依存パッケージインストール
 RUN apt update && apt install wget zip unzip -y
 
 # ユーザー設定
@@ -22,5 +23,6 @@ ENV PATH $PATH:/opt/kotlinc/bin
 
 # 初期ユーザー設定
 USER $USERNAME
-WORKDIR /home/$USERNAME
+RUN mkdir /home/$USERNAME/work
+WORKDIR /home/$USERNAME/work
 CMD ["/bin/bash"]

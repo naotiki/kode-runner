@@ -1,0 +1,14 @@
+id: wasm
+name: WebAssembly
+sourcefileName: main.wat
+extension: wat
+alias:
+  - wasm
+  - wat
+metaData:
+  version: "?"
+  processor: wasmtime
+commands:
+  prepare: null
+  compile: null
+  execute: 'wasmtime main.wat'

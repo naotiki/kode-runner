@@ -7,7 +7,7 @@ alias:
   - なでしこ
   - nako3
 metaData:
-  version: wip
+  version: "?"
   processor: cnako
 commands:
   prepare: null

@@ -9,12 +9,11 @@ ARG GID=1001
 RUN groupadd -g $GID $GROUPNAME && \
     useradd -m -s /bin/bash -u $UID -g $GID $USERNAME
 
-RUN mkdir /work && \
-    mkdir /work/tools && \
-    mkdir -m 777 /work/session/ && \
-    chmod +t /work/session
-WORKDIR /work/tools
+# その他実行環境インストールなど(Option)
 RUN npm install -g nadesiko3
+# 初期ユーザー設定
 USER $USERNAME
-WORKDIR /work/session
+WORKDIR /home/$USERNAME
+RUN mkdir /home/$USERNAME/work
+WORKDIR /home/$USERNAME/work
 CMD ["/bin/bash"]

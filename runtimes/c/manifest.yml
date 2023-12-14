@@ -5,8 +5,8 @@ extension: c
 alias:
   - c
 metaData:
-  version: wip
-  processor: wip
+  version: "?"
+  processor: "?"
 commands:
   prepare: null
   compile: 'gcc main.c -o out'
