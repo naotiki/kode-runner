@@ -33,9 +33,8 @@ jobs:
         run: |
           cd runtimes || exit
           runtimes=($(find . -mindepth 1 -type d | awk -F/ '{print "\x27"$NF"\x27"}' | sort ))
-          echo "${runtimes[*]}"
+          echo "value=[$(IFS=,; echo "${runtimes[*]}")]"
           echo "value=[$(IFS=,; echo "${runtimes[*]}")]" >> $GITHUB_OUTPUT
-        
   build:
     needs: list-runtime
     runs-on: ubuntu-latest
