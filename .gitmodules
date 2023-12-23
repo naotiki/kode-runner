@@ -1,0 +1,3 @@
+[submodule "runtimes"]
+	path = runtimes
+	url = https://github.com/naotiki/code-runner-runtimes.git
