@@ -24,7 +24,7 @@ jobs:
   list-runtime:
     runs-on: ubuntu-latest
     outputs:
-      runtimes: ${{ steps.list-runtime.outputs.value }}
+      runtimes: ${{ steps.listruntime.outputs.value }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
