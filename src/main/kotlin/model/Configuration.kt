@@ -7,7 +7,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Configuration(
     val runtime: RuntimeConfig = RuntimeConfig(),
-    val session:SessionConfig = SessionConfig()
+    val session: SessionConfig = SessionConfig(),
+    val docker: DockerConfig = DockerConfig()
 )
 
 @Serializable
@@ -15,7 +16,8 @@ data class RuntimeConfig(
     val memory: DataSize = MEMORY,
     val nanoCpu: Long = NANOCPU,
     val pids: Long = PIDS,
-    val diskQuota: DataSize? = DISK_QUOTA_SIZE
+    val diskQuota: DataSize? = DISK_QUOTA_SIZE,
+    val runtime: String? = null
 ) {
     companion object Default {
         private val MEMORY: DataSize = DataSize(1, GB)
@@ -35,5 +37,16 @@ data class SessionConfig(
     companion object Default {
         private const val COMPILE_TIMEOUT_MILLIS: Long = 120 * 1000
         private const val EXECUTE_TIMEOUT_MILLIS: Long = 10 * 1000
+    }
+}
+
+@Serializable
+data class DockerConfig(
+    val imagePrefix: String = IMAGE_PREFIX,
+    val imageTag: String = TAG,
+) {
+    companion object Default{
+        private const val IMAGE_PREFIX = "ghcr.io/naotiki/code-runner-runtimes/"
+        private const val TAG = "main"
     }
 }

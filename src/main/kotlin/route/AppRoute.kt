@@ -2,6 +2,8 @@ package route
 
 import com.github.dockerjava.api.async.ResultCallback.Adapter
 import com.github.dockerjava.api.model.BuildResponseItem
+import com.github.dockerjava.api.model.PullResponseItem
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -27,7 +29,7 @@ import java.net.InetAddress
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.LinkedHashSet
-
+private val logger = KotlinLogging.logger {  }
 fun Routing.appRoute() {
     val runtimeRepository by inject<RuntimeRepository>()
     val dockerRepository by inject<DockerRepository>()
@@ -72,6 +74,18 @@ fun Routing.appRoute() {
             call.respond(HttpStatusCode.OK)
             println("End")
         }
+        post("/pull") {
+            runtimeRepository.regenerateRuntimeList()
+            val adaptors = mutableListOf<Adapter<PullResponseItem>>()
+            runtimeRepository.listContainerRuntimes().forEach {
+                adaptors.add(dockerRepository.pullImage(it.id))
+            }
+            adaptors.forEach {
+                it.awaitCompletion()
+            }
+            call.respond(HttpStatusCode.OK)
+            println("End")
+        }
         post("/reload") {
             runtimeRepository.regenerateRuntimeList()
             call.respond(runtimeRepository.listRuntimes())
@@ -104,7 +118,7 @@ fun Routing.appRoute() {
         val sessionId = call.parameters["sessionId"]
         try {
             sessionRepository.run(sessionId!!) {
-                println("Event:$it")
+                logger.trace { "Event $it" }
                 launch {
                     sendSerialized<RunnerEvent>(it)
                 }

@@ -5,6 +5,7 @@ import com.github.dockerjava.api.async.ResultCallback.Adapter
 import com.github.dockerjava.api.model.BuildResponseItem
 import com.github.dockerjava.api.model.Frame
 import com.github.dockerjava.api.model.Image
+import com.github.dockerjava.api.model.PullResponseItem
 import java.io.File
 
 interface DockerRepository {
@@ -22,4 +23,5 @@ interface DockerRepository {
         adapter: Adapter<Frame>,
         inputFile: File?
     ): Pair<String, Adapter<Frame>>
+    fun pullImage(imageName: String): Adapter<PullResponseItem>
 }

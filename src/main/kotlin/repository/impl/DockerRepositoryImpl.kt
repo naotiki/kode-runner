@@ -8,11 +8,11 @@ import repository.ConfigurationRepository
 import repository.DockerRepository
 import java.io.File
 
-private const val DOCKER_IMAGE_PREFIX = "code-runner/"
 private const val SESSION_PATH = "/home/runner/work"
 
 class DockerRepositoryImpl(private val dockerApi: DockerClient, private val configRepo: ConfigurationRepository) :
     DockerRepository {
+    private val dockerConfig get() = configRepo.get().docker
     private fun getHostConfig(): HostConfig = HostConfig.newHostConfig().apply {
         val (runtime) = configRepo.get()
         withNetworkMode("none")
@@ -22,6 +22,9 @@ class DockerRepositoryImpl(private val dockerApi: DockerClient, private val conf
         }
         withNanoCPUs(runtime.nanoCpu)
         withPidsLimit(runtime.pids)
+        runtime.runtime?.let {
+            withRuntime(it)
+        }
     }
 
     override fun ping() {
@@ -42,7 +45,7 @@ class DockerRepositoryImpl(private val dockerApi: DockerClient, private val conf
     // 失敗で自動でcleanupされる
     override fun prepareContainer(imageId: String, copySourceDir: File): String {
         val containerId =
-            dockerApi.createContainerCmd(DOCKER_IMAGE_PREFIX + imageId).withHostConfig(getHostConfig()).withTty(true)
+            dockerApi.createContainerCmd(dockerConfig.imagePrefix + imageId +":${dockerConfig.imageTag}").withHostConfig(getHostConfig()).withTty(true)
                 .exec().id
         try {
             dockerApi.copyArchiveToContainerCmd(containerId).withHostResource(copySourceDir.absolutePath)
@@ -79,12 +82,22 @@ class DockerRepositoryImpl(private val dockerApi: DockerClient, private val conf
         println("start: rebuild $imageTag")
         return dockerApi.buildImageCmd(dockerFile)
             .withRemove(true)
-            .withTags(setOf(DOCKER_IMAGE_PREFIX + imageTag))
+            .withTags(setOf(dockerConfig.imagePrefix + imageTag +":${dockerConfig.imageTag}"))
             .exec(object : Adapter<BuildResponseItem>() {
                 override fun onComplete() {
                     super.onComplete()
                     println("done: rebuild $imageTag")
                 }
             })
+    }
+
+    override fun pullImage(imageName: String): Adapter<PullResponseItem> {
+        println("start: pull $imageName")
+        return dockerApi.pullImageCmd(dockerConfig.imagePrefix + imageName +":${dockerConfig.imageTag}").exec(object : Adapter<PullResponseItem>() {
+            override fun onComplete() {
+                super.onComplete()
+                println("done: pull $imageName")
+            }
+        })
     }
 }
