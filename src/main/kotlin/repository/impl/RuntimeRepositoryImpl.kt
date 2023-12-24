@@ -17,7 +17,7 @@ class RuntimeRepositoryImpl(private val directory: File) : RuntimeRepository {
 
     private var containerRuntimeMap: List<Pair<List<String>, ContainerRuntime>>
     private fun generateRuntimeList(): List<Pair<List<String>, ContainerRuntime>> {
-        val dir = directory.listFiles { it, name -> it.resolve(name).isDirectory } ?: throw FileNotFoundException()
+        val dir = directory.listFiles { it, name -> it.resolve(name).isDirectory && !name.startsWith(".") } ?: throw FileNotFoundException()
         return dir.map {
             val manifest = it.resolve(MANIFEST_NAME)
             val dockerFile = it.resolve(DOCKERFILE_NAME)
