@@ -6,6 +6,7 @@ import com.github.dockerjava.api.model.PullResponseItem
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.http.content.*
+import io.ktor.network.sockets.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -102,8 +103,8 @@ fun Routing.appRoute() {
         println(allMultipartData.map { it.name + it::class.simpleName })
         val src = allMultipartData.get<PartData.FormItem>("src")!!.value
         val input = allMultipartData.get<PartData.FormItem>("input")?.value
-        println(src)
-        println(input)
+        logger.trace { src }
+        logger.trace { input }
         val sessionData = sessionRepository.addQueue(identifier, src.encodeToByteArray(), input?.encodeToByteArray())
         if (sessionData == null) {
             call.respond(HttpStatusCode.NotFound, "Runtime NotFound")
@@ -124,13 +125,12 @@ fun Routing.appRoute() {
                 }
             }
         } catch (e: RunnerError) {
-
             sendSerialized<RunnerEvent>(RunnerEvent.Abort(e.phase, e))
-            println("Error:$e")
-        } catch (e: Exception) {
-            println("a:" + e.message.toString())
+            logger.trace{"Error:$e"}
+        } catch (e: Throwable) {
+            logger.error { e.message.toString()}
         } finally {
-            println("Removing $thisConnection!")
+            logger.trace{"Removing $thisConnection!"}
             connections -= thisConnection
             sessionRepository.clean(sessionId!!)
         }

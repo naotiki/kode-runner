@@ -8,6 +8,8 @@ ktor = "2.3.5"
 slf4j = "2.0.9"
 nanoid = "2.0.0"
 kotest="5.8.0"
+logback="1.4.14"
+kotlin-logging="6.0.1"
 [libraries]
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
@@ -30,6 +32,8 @@ ktor-websockets = { group = "io.ktor", name = "ktor-server-websockets", version.
 ktor-network = { group = "io.ktor", name = "ktor-network", version.ref = "ktor" }
 yamlkt = { group = "net.mamoe.yamlkt", name = "yamlkt", version.ref = "yamlkt" }
 slf4j = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
+logback = { group = "ch.qos.logback",name="logback-classic", version.ref="logback"}
+kotlin-logging = {group= "io.github.oshai", name= "kotlin-logging", version.ref= "kotlin-logging"}
 nanoid = { group = "com.aventrix.jnanoid", name = "jnanoid", version.ref = "nanoid" }
 
 kotest-runner={group="io.kotest",name="kotest-runner-junit5",version.ref="kotest"}

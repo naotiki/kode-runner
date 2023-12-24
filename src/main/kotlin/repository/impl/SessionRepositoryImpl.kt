@@ -4,6 +4,7 @@ import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.github.dockerjava.api.async.ResultCallback.Adapter
 import com.github.dockerjava.api.model.Frame
 import com.github.dockerjava.api.model.StreamType
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import model.RunPhase
 import model.RunnerError
@@ -30,11 +31,13 @@ class SessionRepositoryImpl(
     private val configRepo: ConfigurationRepository
 ) :
     SessionRepository {
+    val logger = KotlinLogging.logger { }
     override val sessions: MutableMap<String, SessionData> = Collections.synchronizedMap(LinkedHashMap())
     override fun clean(sessionId: String) {
         sessions[sessionId]?.run {
             sessionDir.deleteRecursively()
         }
+        logger.trace { "clean session $sessionId" }
     }
 
     private suspend fun runPhase(
@@ -105,9 +108,9 @@ class SessionRepositoryImpl(
     }
 
     override suspend fun run(sessionId: String, onEvent: (RunnerEvent) -> Unit) {
-        val config=configRepo.get()
+        val config = configRepo.get()
         val sessionData = sessions[sessionId] ?: throw IllegalArgumentException()
-        val (_, sessionDir, _, containerRuntime,  inputFile) = sessionData
+        val (_, sessionDir, _, containerRuntime, inputFile) = sessionData
 
         val containerId = dockerRepository.prepareContainer(containerRuntime.id, sessionDir)
         sessions[sessionId] = sessionData.copy(containerId = containerId)
@@ -131,7 +134,7 @@ class SessionRepositoryImpl(
                 inputFile
             )
         } catch (e: Throwable) {
-            println("msg:" + e.message)
+            logger.error{ e }
             throw e
         } finally {
             withContext(Dispatchers.IO) {
@@ -147,6 +150,7 @@ class SessionRepositoryImpl(
     }
 
     override suspend fun addQueue(identifier: String, src: ByteArray, input: ByteArray?): SessionData? {
+        logger.trace { "Add queue $identifier" }
         val runtime = runtimeRepository.searchContainerRuntime(identifier)
         var sessionData: SessionData? = null
         if (runtime != null) {
@@ -176,6 +180,7 @@ class SessionRepositoryImpl(
                 inputFile
             )
             sessions[sessionId] = sessionData
+            logger.trace { "Add queue: session $sessionId" }
         }
         return sessionData
     }

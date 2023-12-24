@@ -4,6 +4,7 @@ import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.async.ResultCallback.Adapter
 import com.github.dockerjava.api.model.*
 import data.DataSize
+import io.github.oshai.kotlinlogging.KotlinLogging
 import repository.ConfigurationRepository
 import repository.DockerRepository
 import java.io.File
@@ -12,6 +13,7 @@ private const val SESSION_PATH = "/home/runner/work"
 
 class DockerRepositoryImpl(private val dockerApi: DockerClient, private val configRepo: ConfigurationRepository) :
     DockerRepository {
+    private val logger = KotlinLogging.logger {  }
     private val dockerConfig get() = configRepo.get().docker
     private fun getHostConfig(): HostConfig = HostConfig.newHostConfig().apply {
         val (runtime) = configRepo.get()
@@ -79,24 +81,24 @@ class DockerRepositoryImpl(private val dockerApi: DockerClient, private val conf
     }
 
     override fun buildImage(dockerFile: File, imageTag: String): Adapter<BuildResponseItem> {
-        println("start: rebuild $imageTag")
+        logger.info{"start: rebuild $imageTag"}
         return dockerApi.buildImageCmd(dockerFile)
             .withRemove(true)
             .withTags(setOf(dockerConfig.imagePrefix + imageTag +":${dockerConfig.imageTag}"))
             .exec(object : Adapter<BuildResponseItem>() {
                 override fun onComplete() {
                     super.onComplete()
-                    println("done: rebuild $imageTag")
+                    logger.info{"done: rebuild $imageTag"}
                 }
             })
     }
 
     override fun pullImage(imageName: String): Adapter<PullResponseItem> {
-        println("start: pull $imageName")
+        logger.info{"start: pull $imageName"}
         return dockerApi.pullImageCmd(dockerConfig.imagePrefix + imageName +":${dockerConfig.imageTag}").exec(object : Adapter<PullResponseItem>() {
             override fun onComplete() {
                 super.onComplete()
-                println("done: pull $imageName")
+                logger.info{"done: pull $imageName"}
             }
         })
     }
