@@ -13,7 +13,6 @@ dependencies {
     implementation(projects.shared)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
-    implementation(libs.ktor.server.websockets)
     implementation(libs.ktor.server.contentnegotiation)
     implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.serialization.json)

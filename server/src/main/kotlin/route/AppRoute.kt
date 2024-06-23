@@ -10,7 +10,6 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.websocket.*
 import kotlinx.rpc.serialization.cbor
 import kotlinx.rpc.transport.ktor.server.rpc
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -25,9 +24,6 @@ import service.RunnerService
 import service.impl.RunnerServiceImpl
 import util.get
 import java.net.InetAddress
-import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.collections.LinkedHashSet
 
 private val logger = KotlinLogging.logger { }
 
@@ -113,29 +109,6 @@ fun Routing.appRoute() {
         }
         call.respond(sessionData.toRespondSession())
     }
-    val connections = Collections.synchronizedSet<Connection?>(LinkedHashSet())
-    /*webSocket("/run/{sessionId}") {
-        val thisConnection = Connection(this)
-        connections += thisConnection
-        val sessionId = call.parameters["sessionId"]
-        try {
-            sessionRepository.run(sessionId!!) {
-                logger.trace { "Event $it" }
-                launch {
-                    sendSerialized<RunnerEvent>(it)
-                }
-            }
-        } catch (e: RunnerError) {
-            sendSerialized<RunnerEvent>(RunnerEvent.Abort(e.phase, e))
-            logger.trace { "Error:$e" }
-        } catch (e: Throwable) {
-            logger.error { e.message.toString() }
-        } finally {
-            logger.trace { "Removing $thisConnection!" }
-            connections -= thisConnection
-            sessionRepository.clean(sessionId!!)
-        }
-    }*/
 
     rpc("/rpc") {
         rpcConfig {
@@ -145,12 +118,4 @@ fun Routing.appRoute() {
         registerService<RunnerService> { ctx -> RunnerServiceImpl(ctx,sessionRepository) }
     }
 
-}
-
-class Connection(val session: DefaultWebSocketSession) {
-    companion object {
-        val lastId = AtomicInteger(0)
-    }
-
-    val name = "session${lastId.getAndIncrement()}"
 }

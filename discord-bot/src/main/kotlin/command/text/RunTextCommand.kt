@@ -9,8 +9,6 @@ import dev.kord.rest.builder.message.modify.embed
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.rpc.internal.streamScoped
 import model.RunPhase
@@ -21,9 +19,7 @@ import runnerService
 import util.escapeCodeblocks
 
 class RunTextCommand : TextCommand("run") {
-    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun MessageCreateEvent.execute(body: String) = coroutineScope {
-//val result = "```(?<lang>(?!input).*)\\n(?<src>[\\s\\S]*)```".toRegex().find(body)
         val result =
             "```(?<lang>(?!input).*)\\n(?<src>(?:(?!```)[\\s\\S])*)```".toRegex().find(body) ?: return@coroutineScope
         val ownMessage = message.reply { content = "お待ちください..." }

@@ -12,12 +12,10 @@ dependencies {
     implementation(projects.shared)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
-    implementation(libs.ktor.client.websockets)
     implementation(libs.ktor.client.contentnegotiation)
 
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.serialization.cbor)
-    implementation(libs.ktor.serialization.protobuf)
 
     implementation(libs.kotlinx.rpc.runtime.client)
     implementation(libs.kotlinx.rpc.runtime.serialization.cbor)
