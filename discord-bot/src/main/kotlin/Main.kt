@@ -13,25 +13,35 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.websocket.*
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.*
+import io.ktor.serialization.kotlinx.cbor.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.rpc.client.withService
+import kotlinx.rpc.serialization.cbor
+import kotlinx.rpc.transport.ktor.client.installRPC
+import kotlinx.rpc.transport.ktor.client.rpc
+import kotlinx.rpc.transport.ktor.client.rpcConfig
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.cbor.Cbor
+import service.RunnerService
 import java.io.File
 import java.net.ConnectException
 import java.util.*
 
 @OptIn(ExperimentalSerializationApi::class)
-val client = HttpClient(CIO) {
-    install(ContentNegotiation) {
-        json()
-    }
-    install(WebSockets) {
-        contentConverter = KotlinxWebsocketSerializationConverter(Cbor)
+val client by lazy {
+    HttpClient {
+        installRPC()
+        install(ContentNegotiation) {
+            json()
+        }
     }
 }
+lateinit var runnerService: RunnerService
+
 
 val slashCommands by lazy {
     arrayOf<RootCommand>(
@@ -39,6 +49,7 @@ val slashCommands by lazy {
     )
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 suspend fun main(args: Array<String>) {
 
     val props = withContext(Dispatchers.IO) {
@@ -46,9 +57,21 @@ suspend fun main(args: Array<String>) {
             load(File("env.properties").inputStream())
         }
     }
+    val server = props["server"] as String
+    println(server)
+    runnerService = client.rpc {
+        url {
+            takeFrom(server)
+            encodedPath = "/rpc"
+        }
+        rpcConfig {
+            serialization {
+                cbor()
+            }
+        }
+    }.withService<RunnerService>()
     val env = props["discord.env"] as String
     println("Starting... on $env environment")
-    println(props["discord.${env}.token"] as String)
     val kord = Kord(props["discord.${env}.token"] as String)
     println("Register slash-commands")
     slashCommands.forEach {
@@ -71,6 +94,7 @@ suspend fun main(args: Array<String>) {
             is dev.kord.core.entity.interaction.SubCommand -> slashCommands.filterIsInstance<SlashCommandWithSub>()
         }.single { it.name == interaction.command.rootName }.exec(interaction)
     }
+
     println("Login")
     kord.login {
         // we need to specify this to receive the content of messages

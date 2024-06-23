@@ -6,39 +6,40 @@ import com.github.dockerjava.api.model.PullResponseItem
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.network.sockets.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.websocket.*
-import io.ktor.utils.io.core.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.launch
+import kotlinx.rpc.serialization.cbor
+import kotlinx.rpc.transport.ktor.server.rpc
+import kotlinx.serialization.ExperimentalSerializationApi
 import model.RespondSession.Companion.toRespondSession
-import model.RunnerError
-import model.RunnerEvent
 import model.RunnerHostInfo
 import org.koin.ktor.ext.inject
 import repository.ConfigurationRepository
 import repository.DockerRepository
 import repository.RuntimeRepository
 import repository.SessionRepository
+import service.RunnerService
+import service.impl.RunnerServiceImpl
 import util.get
-import java.lang.IllegalStateException
 import java.net.InetAddress
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.LinkedHashSet
-private val logger = KotlinLogging.logger {  }
+
+private val logger = KotlinLogging.logger { }
+
+@OptIn(ExperimentalSerializationApi::class)
 fun Routing.appRoute() {
     val runtimeRepository by inject<RuntimeRepository>()
     val dockerRepository by inject<DockerRepository>()
     val configRepository by inject<ConfigurationRepository>()
-    route("/host"){
+    route("/host") {
         get {
             call.respond(
-                RunnerHostInfo(InetAddress.getLocalHost().hostName,configRepository.get())
+                RunnerHostInfo(InetAddress.getLocalHost().hostName, configRepository.get())
             )
         }
     }
@@ -113,7 +114,7 @@ fun Routing.appRoute() {
         call.respond(sessionData.toRespondSession())
     }
     val connections = Collections.synchronizedSet<Connection?>(LinkedHashSet())
-    webSocket("/run/{sessionId}") {
+    /*webSocket("/run/{sessionId}") {
         val thisConnection = Connection(this)
         connections += thisConnection
         val sessionId = call.parameters["sessionId"]
@@ -126,15 +127,24 @@ fun Routing.appRoute() {
             }
         } catch (e: RunnerError) {
             sendSerialized<RunnerEvent>(RunnerEvent.Abort(e.phase, e))
-            logger.trace{"Error:$e"}
+            logger.trace { "Error:$e" }
         } catch (e: Throwable) {
-            logger.error { e.message.toString()}
+            logger.error { e.message.toString() }
         } finally {
-            logger.trace{"Removing $thisConnection!"}
+            logger.trace { "Removing $thisConnection!" }
             connections -= thisConnection
             sessionRepository.clean(sessionId!!)
         }
+    }*/
+
+    rpc("/rpc") {
+        rpcConfig {
+            serialization { cbor() }
+        }
+
+        registerService<RunnerService> { ctx -> RunnerServiceImpl(ctx,sessionRepository) }
     }
+
 }
 
 class Connection(val session: DefaultWebSocketSession) {

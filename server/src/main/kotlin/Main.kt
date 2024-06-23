@@ -2,6 +2,7 @@ import di.appModule
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.serialization.kotlinx.*
+import io.ktor.serialization.kotlinx.cbor.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -16,9 +17,9 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.rpc.transport.ktor.server.RPC
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.cbor.Cbor
-import kotlinx.serialization.protobuf.ProtoBuf
 import org.koin.ktor.plugin.Koin
 import route.appRoute
 import java.util.zip.Deflater
@@ -48,14 +49,14 @@ suspend fun socketServer(host: String, port: Int) = coroutineScope {
 
 @OptIn(ExperimentalSerializationApi::class)
 private fun Application.module() {
+    install(RPC)
+
     install(ContentNegotiation) {
         json()
     }
+
     install(Koin) {
         modules(appModule)
-    }
-    install(WebSockets) {
-        contentConverter = KotlinxWebsocketSerializationConverter(Cbor)
     }
     routing {
         //swaggerUI("swagger")

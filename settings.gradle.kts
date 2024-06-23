@@ -1,7 +1,15 @@
 pluginManagement {
     repositories {
+        maven(url = "https://maven.pkg.jetbrains.space/public/p/krpc/maven")
         mavenCentral()
         gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositories{
+        google()
+        maven(url = "https://maven.pkg.jetbrains.space/public/p/krpc/maven")
+        mavenCentral()
     }
 }
 
@@ -10,6 +18,7 @@ plugins {
 }
 
 rootProject.name = "code-runner"
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(":server")
 include(":discord-bot")
-include("shared")
+include(":shared")

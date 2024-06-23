@@ -1,35 +1,64 @@
 [versions]
+kotlin = "1.9.24"
 coroutines = "1.7.3"
 serialization = "1.6.0"
-docker-api = "3.3.4"
+rpc = "0.1.0"
+ksp="1.9.24-1.0.20"
+docker-api = "3.3.6"
 koin = "3.5.0"
 yamlkt = "0.13.0"
-ktor = "2.3.5"
+ktor = "2.3.12"
 slf4j = "2.0.9"
 nanoid = "2.0.0"
 kotest="5.8.0"
 logback="1.4.14"
 kotlin-logging="6.0.1"
+
+kord = "0.11.1"
 [libraries]
+# ktx
+## coroutine
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+## serialization
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-serialization-hocon = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-hocon", version.ref = "serialization" }
-kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "serialization" }
+kotlinx-serialization-cbor = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-cbor", version.ref = "serialization" }
+##rpc
+kotlinx-rpc-runtime = { module = "org.jetbrains.kotlinx:kotlinx-rpc-runtime" }
+kotlinx-rpc-runtime-client = { module = "org.jetbrains.kotlinx:kotlinx-rpc-runtime-client" }
+kotlinx-rpc-runtime-server = { module = "org.jetbrains.kotlinx:kotlinx-rpc-runtime-server" }
+kotlinx-rpc-transport-ktor-client = { module = "org.jetbrains.kotlinx:kotlinx-rpc-transport-ktor-client" }
+kotlinx-rpc-transport-ktor-server = { module = "org.jetbrains.kotlinx:kotlinx-rpc-transport-ktor-server" }
+kotlinx-rpc-runtime-serialization-cbor = { module = "org.jetbrains.kotlinx:kotlinx-rpc-runtime-serialization-cbor" }
 
+# Docker
 docker-api = { group = "com.github.docker-java", name = "docker-java", version.ref = "docker-api" }
 docker-api-transport-apache = { group = "com.github.docker-java", name = "docker-java-transport-httpclient5", version.ref = "docker-api" }
+
+# Koin (DI)
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 koin-ktor = { group = "io.insert-koin", name = "koin-ktor", version.ref = "koin" }
 koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
 
-ktor-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
-ktor-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
-ktor-contentnegotiation = { group = "io.ktor", name = "ktor-server-content-negotiation", version.ref = "ktor" }
+# Ktor
+## Server
+ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
+ktor-server-contentnegotiation = { group = "io.ktor", name = "ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-swagger = { group = "io.ktor", name = "ktor-server-swagger", version.ref = "ktor" }
+ktor-server-websockets = { group = "io.ktor", name = "ktor-server-websockets", version.ref = "ktor" }
+## Client
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+ktor-client-contentnegotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-websockets = { group = "io.ktor", name = "ktor-client-websockets", version.ref = "ktor" }
+## serialization
 ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-serialization-cbor = { group = "io.ktor", name = "ktor-serialization-kotlinx-cbor", version.ref = "ktor" }
-ktor-swagger = { group = "io.ktor", name = "ktor-server-swagger", version.ref = "ktor" }
-ktor-websockets = { group = "io.ktor", name = "ktor-server-websockets", version.ref = "ktor" }
+ktor-serialization-protobuf = { group = "io.ktor", name = "ktor-serialization-kotlinx-protobuf", version.ref = "ktor" }
+## other
 ktor-network = { group = "io.ktor", name = "ktor-network", version.ref = "ktor" }
+
 yamlkt = { group = "net.mamoe.yamlkt", name = "yamlkt", version.ref = "yamlkt" }
 slf4j = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
 logback = { group = "ch.qos.logback",name="logback-classic", version.ref="logback"}
@@ -37,3 +66,11 @@ kotlin-logging = {group= "io.github.oshai", name= "kotlin-logging", version.ref=
 nanoid = { group = "com.aventrix.jnanoid", name = "jnanoid", version.ref = "nanoid" }
 
 kotest-runner={group="io.kotest",name="kotest-runner-junit5",version.ref="kotest"}
+kord = {group="dev.kord",name = "kord-core",version="0.11.1"}
+[plugins]
+kotlinPluginSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinx-rpc = { id = "org.jetbrains.kotlinx.rpc.plugin", version.ref = "rpc" }
+kotlinx-rpc-platform = { id = "org.jetbrains.kotlinx.rpc.platform", version.ref = "rpc" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

@@ -1,26 +1,31 @@
 plugins {
-    kotlin("jvm") version "1.9.10"
-    kotlin("plugin.serialization") version "1.9.10"
+    alias(libs.plugins.kotlinJvm)
+    alias(libs.plugins.kotlinPluginSerialization)
+    alias(libs.plugins.kotlinx.rpc.platform)
     application
 }
 
 group = "me.naotiki"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-}
-val ktor_version: String by project
 dependencies {
-    implementation("io.ktor:ktor-client-core-jvm:2.3.6")
-    implementation("io.ktor:ktor-client-cio-jvm:2.3.6")
-    implementation("io.ktor:ktor-client-websockets-jvm:2.3.6")
-    implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
-    implementation("io.ktor:ktor-serialization-kotlinx-protobuf:$ktor_version")
-    implementation("io.ktor:ktor-serialization-kotlinx-cbor:$ktor_version")
-    implementation("org.slf4j:slf4j-simple:2.0.9")
-    implementation("dev.kord:kord-core:0.11.1")
+    implementation(projects.shared)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.websockets)
+    implementation(libs.ktor.client.contentnegotiation)
+
+    implementation(libs.ktor.serialization.json)
+    implementation(libs.ktor.serialization.cbor)
+    implementation(libs.ktor.serialization.protobuf)
+
+    implementation(libs.kotlinx.rpc.runtime.client)
+    implementation(libs.kotlinx.rpc.runtime.serialization.cbor)
+    implementation(libs.kotlinx.rpc.transport.ktor.client)
+
+    implementation(libs.slf4j)
+    implementation(libs.kord)
+
     testImplementation(kotlin("test"))
 }
 

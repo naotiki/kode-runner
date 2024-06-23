@@ -1,31 +1,30 @@
 plugins {
-    kotlin("jvm") version "1.9.10"
-    kotlin("plugin.serialization") version "1.9.10"
+    alias(libs.plugins.kotlinJvm)
+    alias(libs.plugins.kotlinPluginSerialization)
+    alias(libs.plugins.kotlinx.rpc.platform)
     application
 }
 
 group = "me.naotiki"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-}
 
 dependencies {
-    implementation(libs.ktor.core)
-    implementation(libs.ktor.netty)
-    implementation(libs.ktor.network)
-    implementation(libs.ktor.websockets)
-    implementation(libs.ktor.contentnegotiation)
+    implementation(projects.shared)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.websockets)
+    implementation(libs.ktor.server.contentnegotiation)
+    implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.serialization.cbor)
-    implementation(libs.ktor.swagger)
+    implementation(libs.ktor.network)
    // implementation(libs.slf4j)
     implementation(libs.logback)
     implementation(libs.kotlin.logging)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.hocon)
-    implementation(libs.kotlinx.serialization.protobuf)
+    implementation(libs.kotlinx.serialization.cbor)
     implementation(libs.kotlinx.coroutines)
     // https://mvnrepository.com/artifact/com.github.docker-java/docker-java
     implementation(libs.docker.api)
@@ -34,6 +33,10 @@ dependencies {
     implementation(libs.koin.ktor)
     implementation(libs.yamlkt)
     implementation(libs.nanoid)
+
+    implementation(libs.kotlinx.rpc.runtime.server)
+    implementation(libs.kotlinx.rpc.runtime.serialization.cbor)
+    implementation(libs.kotlinx.rpc.transport.ktor.server)
 
   //  testImplementation(libs.koin.test)
     testImplementation(kotlin("test"))

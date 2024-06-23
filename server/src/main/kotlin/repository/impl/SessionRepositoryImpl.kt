@@ -6,6 +6,9 @@ import com.github.dockerjava.api.model.Frame
 import com.github.dockerjava.api.model.StreamType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
+import kotlinx.coroutines.NonCancellable.cancel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.*
 import model.RunPhase
 import model.RunnerError
 import model.RunnerEvent
@@ -16,6 +19,7 @@ import repository.RuntimeRepository
 import repository.SessionRepository
 import java.io.File
 import java.util.*
+import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -44,99 +48,134 @@ class SessionRepositoryImpl(
         containerId: String,
         phase: RunPhase,
         command: Array<String>,
-        onEvent: (RunnerEvent) -> Unit,
+
         timeout: Long?,
         inputFile: File? = null
-    ) {
-        var complated = false
-        onEvent(RunnerEvent.Start(phase))
+    ): Flow<RunnerEvent> {
         val logId = AtomicInteger(0)
-        val (execId, adapter) = dockerRepository.execCmdContainer(
-            containerId,
-            command,
-            object : Adapter<Frame>() {
-                override fun onNext(frame: Frame) {
-                    super.onNext(frame)
-                    when (frame.streamType) {
-                        StreamType.STDOUT -> onEvent(
-                            RunnerEvent.Log(
-                                phase,
-                                frame.payload.decodeToString(),
-                                logId.getAndIncrement()
-                            )
-                        )
+        return flow {
+            var execId: String? = null
+            emitAll(callbackFlow {
+                send(RunnerEvent.Start(phase))
 
-                        StreamType.STDERR -> onEvent(
-                            RunnerEvent.ErrorLog(
-                                phase,
-                                frame.payload.decodeToString(),
-                                logId.getAndIncrement()
-                            )
-                        )
+                execId = dockerRepository.execCmdContainer(
+                    containerId,
+                    command,
+                    object : Adapter<Frame>() {
+                        override fun onNext(frame: Frame) {
+                            super.onNext(frame)
+                            when (frame.streamType) {
+                                StreamType.STDOUT -> trySend(
+                                    RunnerEvent.Log(
+                                        phase,
+                                        frame.payload.decodeToString(),
+                                        logId.getAndIncrement()
+                                    )
+                                )
 
-                        else -> {
-                            onEvent(RunnerEvent.Log(phase, frame.payload.decodeToString(), logId.getAndIncrement()))
+                                StreamType.STDERR -> trySend(
+                                    RunnerEvent.ErrorLog(
+                                        phase,
+                                        frame.payload.decodeToString(),
+                                        logId.getAndIncrement()
+                                    )
+                                )
+
+                                else -> {
+                                    trySend(
+                                        RunnerEvent.Log(
+                                            phase,
+                                            frame.payload.decodeToString(),
+                                            logId.getAndIncrement()
+                                        )
+                                    )
+                                }
+                            }
+
                         }
+
+                        override fun onError(throwable: Throwable) {
+                            super.onError(throwable)
+                            throwable.printStackTrace()
+                            throw throwable
+                        }
+
+                        override fun onComplete() {
+                            super.onComplete()
+                            channel.close()
+                        }
+                    }, inputFile
+                ).first
+
+                /*timeout?.let {
+                    withTimeoutOrNull(it) {
+                        awaitClose {
+                            adapter.close()
+                        }
+                    } ?: run {
+                        cancel(CancellationException("Docker Exec Error", RunnerError.Timeout(phase)))
                     }
-
+                } ?:*/
+                val job = timeout?.let {
+                    launch {
+                        delay(it)
+                        throw RunnerError.Timeout(phase)
+                    }
                 }
-
-                override fun onError(throwable: Throwable) {
-                    super.onError(throwable)
-                    throwable.printStackTrace()
-                }
-
-                override fun onComplete() {
-                    super.onComplete()
-                    complated = true
-                }
-            }, inputFile
-        )
-        timeout?.let {
-            if (!adapter.awaitCompletion(it, TimeUnit.MILLISECONDS)) {
-
-                throw RunnerError.Timeout(phase)
+                awaitClose()
+                job?.cancel()
+            })
+            requireNotNull(execId)
+            val exitCode = dockerRepository.inspectExitCodeExec(execId!!)
+            if (exitCode != 0L) {
+                throw RunnerError.CmdError(
+                    phase,
+                    "${command.joinToString(" ")} が終了コード $exitCode で終了しました"
+                )
             }
-        } ?: adapter.awaitCompletion()
-
-
-        val exitCode = dockerRepository.inspectExitCodeExec(execId)
-        if (exitCode != 0L) {
-            throw RunnerError.CmdError(phase, "${command.joinToString(" ")} が終了コード $exitCode で終了しました")
+            emit(RunnerEvent.Finish(phase))
         }
-        onEvent(RunnerEvent.Finish(phase))
+
     }
 
-    override suspend fun run(sessionId: String, onEvent: (RunnerEvent) -> Unit) {
+    override suspend fun run(sessionId: String): Flow<RunnerEvent> {
         val config = configRepo.get()
         val sessionData = sessions[sessionId] ?: throw IllegalArgumentException()
         val (_, sessionDir, _, containerRuntime, inputFile) = sessionData
 
         val containerId = dockerRepository.prepareContainer(containerRuntime.id, sessionDir)
         sessions[sessionId] = sessionData.copy(containerId = containerId)
-        val (prepare, compile, execute) = containerRuntime.runtimeData.commands
-        try {
-            if (compile != null) {
-                runPhase(
-                    containerId,
-                    RunPhase.Compile,
-                    compile.split(" ").toTypedArray(),
-                    onEvent,
-                    config.session.compileMillis,
+        val (_, compile, execute) = containerRuntime.runtimeData.commands
+        return flow {
+            runCatching {
+                if (compile != null) {
+                    this.emitAll(
+                        runPhase(
+                            containerId,
+                            RunPhase.Compile,
+                            compile.split(" ").toTypedArray(),
+                            config.session.compileMillis,
+                        )
+                    )
+                }
+                emitAll(
+                    runPhase(
+                        containerId,
+                        RunPhase.Execute,
+                        execute.split(" ").toTypedArray(),
+                        config.session.executeMillis,
+                        inputFile
+                    )
                 )
+            }.onFailure {
+                if (it is RunnerError){
+                    emit(RunnerEvent.Abort(it.phase,it))
+                }
             }
-            runPhase(
-                containerId,
-                RunPhase.Execute,
-                execute.split(" ").toTypedArray(),
-                onEvent,
-                config.session.executeMillis,
-                inputFile
-            )
-        } catch (e: Throwable) {
-            logger.error{ e }
-            throw e
-        } finally {
+        }.catch {
+            logger.error { it }
+            throw it
+        }.onCompletion {
             withContext(Dispatchers.IO) {
                 launch {
                     dockerRepository.cleanup(containerId)
@@ -151,37 +190,39 @@ class SessionRepositoryImpl(
 
     override suspend fun addQueue(identifier: String, src: ByteArray, input: ByteArray?): SessionData? {
         logger.trace { "Add queue $identifier" }
-        val runtime = runtimeRepository.searchContainerRuntime(identifier)
-        var sessionData: SessionData? = null
-        if (runtime != null) {
-            val sessionId = NanoIdUtils.randomNanoId()
-            val sessionDir = directory.resolve(sessionId)
-            if (!sessionDir.mkdir()) throw FileSystemException(sessionDir, reason = "mkdir failed")
-            val sourceFile = sessionDir.resolve(runtime.runtimeData.sourcefileName)
-            if (!withContext(Dispatchers.IO) {
-                    sourceFile.createNewFile()
-                }) throw FileSystemException(sourceFile, reason = "createSource failed")
-            sourceFile.writeBytes(src)
+        val runtime = runtimeRepository.searchContainerRuntime(identifier) ?: return null
 
-            val inputFile = input?.let {
-                sessionDir.resolve(INPUT_FILE).apply {
-                    if (!withContext(Dispatchers.IO) {
-                            createNewFile()
-                        }) throw FileSystemException(sourceFile, reason = "createInput failed")
-                    writeBytes(it)
-                }
+        val sessionId = NanoIdUtils.randomNanoId()
+        val sessionDir = directory.resolve(sessionId)
+        if (!sessionDir.mkdir()) throw FileSystemException(sessionDir, reason = "mkdir failed")
+        val sourceFile = sessionDir.resolve(runtime.runtimeData.sourcefileName)
+        if (!withContext(Dispatchers.IO) {
+                sourceFile.createNewFile()
+            }) throw FileSystemException(sourceFile, reason = "createSource failed")
+        sourceFile.writeBytes(src)
+
+        val inputFile = input?.let {
+            sessionDir.resolve(INPUT_FILE).apply {
+                if (!withContext(Dispatchers.IO) {
+                        createNewFile()
+                    }) throw FileSystemException(sourceFile, reason = "createInput failed")
+                writeBytes(it)
             }
-
-            sessionData = SessionData(
-                sessionId,
-                sessionDir,
-                sourceFile,
-                runtime,
-                inputFile
-            )
-            sessions[sessionId] = sessionData
-            logger.trace { "Add queue: session $sessionId" }
         }
+
+        val sessionData = SessionData(
+            sessionId,
+            sessionDir,
+            sourceFile,
+            runtime,
+            inputFile
+        )
+        sessions[sessionId] = sessionData
+        logger.trace { "Add queue: session $sessionId" }
         return sessionData
     }
 }
+
+private suspend fun <T> mayWithTimeout(timeout: Long?, block: suspend CoroutineScope.() -> T) = timeout?.let {
+    withTimeout(it, block)
+} ?: coroutineScope { block() }

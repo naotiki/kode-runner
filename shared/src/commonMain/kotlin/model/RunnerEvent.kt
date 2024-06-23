@@ -30,7 +30,7 @@ sealed interface RunnerEvent {
 }
 
 @Serializable
-sealed class RunnerError() :  Throwable() {
+sealed class RunnerError : Throwable() {
     abstract val phase: RunPhase
     @Serializable
     data class Timeout(override val phase: RunPhase) : RunnerError()
