@@ -10,3 +10,6 @@ plugins {
 }
 
 rootProject.name = "code-runner"
+include(":server")
+include(":discord-bot")
+include("shared")

@@ -58,7 +58,7 @@ private fun Application.module() {
         contentConverter = KotlinxWebsocketSerializationConverter(Cbor)
     }
     routing {
-        swaggerUI("swagger")
+        //swaggerUI("swagger")
         appRoute()
     }
 }
