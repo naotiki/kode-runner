@@ -2,6 +2,7 @@ package model
 
 import data.DataSize
 import data.DataSize.ByteUnit.*
+import data.DataSize.ByteUnit.Companion.get
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -47,6 +48,6 @@ data class DockerConfig(
 ) {
     companion object Default{
         private const val IMAGE_PREFIX = "ghcr.io/naotiki/code-runner-runtimes/"
-        private const val TAG = "main"
+        private const val TAG = "latest"
     }
 }

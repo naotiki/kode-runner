@@ -6,26 +6,17 @@ import com.github.dockerjava.api.model.Frame
 import com.github.dockerjava.api.model.StreamType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
-import kotlinx.coroutines.NonCancellable.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import model.RunPhase
-import model.RunnerError
-import model.RunnerEvent
-import model.SessionData
+import model.*
 import repository.ConfigurationRepository
 import repository.DockerRepository
 import repository.RuntimeRepository
 import repository.SessionRepository
 import java.io.File
 import java.util.*
-import java.util.concurrent.CancellationException
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
-const val COMPILE_TIMEOUT_MILLIS: Long = 120 * 1000
-
-const val EXEC_TIMEOUT_MILLIS: Long = 10 * 1000
 const val INPUT_FILE = "input"
 
 class SessionRepositoryImpl(
@@ -35,7 +26,7 @@ class SessionRepositoryImpl(
     private val configRepo: ConfigurationRepository
 ) :
     SessionRepository {
-    val logger = KotlinLogging.logger { }
+    private val logger = KotlinLogging.logger { }
     override val sessions: MutableMap<String, SessionData> = Collections.synchronizedMap(LinkedHashMap())
     override fun clean(sessionId: String) {
         sessions[sessionId]?.run {
@@ -55,9 +46,10 @@ class SessionRepositoryImpl(
         val logId = AtomicInteger(0)
         return flow {
             var execId: String? = null
-            emitAll(callbackFlow {
+            val logFlow: Flow<RunnerEvent> = callbackFlow {
                 send(RunnerEvent.Start(phase))
-
+                val stdout = StackString("", 1000)
+                val stderr = StackString("", 1000)
                 execId = dockerRepository.execCmdContainer(
                     containerId,
                     command,
@@ -65,33 +57,12 @@ class SessionRepositoryImpl(
                         override fun onNext(frame: Frame) {
                             super.onNext(frame)
                             when (frame.streamType) {
-                                StreamType.STDOUT -> trySend(
-                                    RunnerEvent.Log(
-                                        phase,
-                                        frame.payload.decodeToString(),
-                                        logId.getAndIncrement()
-                                    )
-                                )
-
-                                StreamType.STDERR -> trySend(
-                                    RunnerEvent.ErrorLog(
-                                        phase,
-                                        frame.payload.decodeToString(),
-                                        logId.getAndIncrement()
-                                    )
-                                )
-
-                                else -> {
-                                    trySend(
-                                        RunnerEvent.Log(
-                                            phase,
-                                            frame.payload.decodeToString(),
-                                            logId.getAndIncrement()
-                                        )
-                                    )
-                                }
+                                StreamType.STDOUT -> stdout.push(frame.payload.decodeToString())
+                                StreamType.STDERR -> stderr.push(frame.payload.decodeToString().also {
+                                    println(it)
+                                })
+                                else -> stdout.push(frame.payload.decodeToString())
                             }
-
                         }
 
                         override fun onError(throwable: Throwable) {
@@ -102,29 +73,46 @@ class SessionRepositoryImpl(
 
                         override fun onComplete() {
                             super.onComplete()
+                            val stdo = stdout.popAll()
+                            if (stdo.isNotEmpty()) {
+                                trySend(RunnerEvent.Log(phase, stdo, logId.getAndIncrement()))
+                            }
+                            val stde = stderr.popAll()
+                            if (stde.isNotEmpty()) {
+                                trySend(RunnerEvent.ErrorLog(phase, stde, logId.getAndIncrement()))
+                            }
                             channel.close()
                         }
                     }, inputFile
                 ).first
 
-                /*timeout?.let {
-                    withTimeoutOrNull(it) {
-                        awaitClose {
-                            adapter.close()
+                val sendRoutine = launch {
+                    while (true) {
+                        val stdo = stdout.popAll()
+                        if (stdo.isNotEmpty()) {
+                            send(RunnerEvent.Log(phase, stdo, logId.getAndIncrement()))
                         }
-                    } ?: run {
-                        cancel(CancellationException("Docker Exec Error", RunnerError.Timeout(phase)))
+                        val stde = stderr.popAll()
+                        if (stde.isNotEmpty()) {
+                            send(RunnerEvent.ErrorLog(phase, stde, logId.getAndIncrement()))
+                        }
+                        delay(750)
                     }
-                } ?:*/
+                }
+
                 val job = timeout?.let {
                     launch {
                         delay(it)
+                        println("Timeout! $it")
                         throw RunnerError.Timeout(phase)
                     }
                 }
-                awaitClose()
+                awaitClose{
+                    sendRoutine.cancel()
+                }
                 job?.cancel()
-            })
+            }
+            emitAll(logFlow)
             requireNotNull(execId)
             val exitCode = dockerRepository.inspectExitCodeExec(execId!!)
             if (exitCode != 0L) {
@@ -135,7 +123,6 @@ class SessionRepositoryImpl(
             }
             emit(RunnerEvent.Finish(phase))
         }
-
     }
 
     override suspend fun run(sessionId: String): Flow<RunnerEvent> {
@@ -147,7 +134,6 @@ class SessionRepositoryImpl(
         sessions[sessionId] = sessionData.copy(containerId = containerId)
         val (_, compile, execute) = containerRuntime.runtimeData.commands
         return flow {
-            runCatching {
                 if (compile != null) {
                     this.emitAll(
                         runPhase(
@@ -167,17 +153,18 @@ class SessionRepositoryImpl(
                         inputFile
                     )
                 )
-            }.onFailure {
-                if (it is RunnerError){
-                    emit(RunnerEvent.Abort(it.phase,it))
-                }
-            }
+
         }.catch {
             logger.error { it }
+            if (it is RunnerError) {
+                emit(RunnerEvent.Abort(it.phase, it))
+                return@catch
+            }
             throw it
         }.onCompletion {
             withContext(Dispatchers.IO) {
                 launch {
+                    clean(sessionId)
                     dockerRepository.cleanup(containerId)
                 }
             }
@@ -223,6 +210,3 @@ class SessionRepositoryImpl(
     }
 }
 
-private suspend fun <T> mayWithTimeout(timeout: Long?, block: suspend CoroutineScope.() -> T) = timeout?.let {
-    withTimeout(it, block)
-} ?: coroutineScope { block() }

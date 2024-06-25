@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="02ee2d64-84c5-4730-a7f0-e87eaeb3836a" name="kode-runner">
+        <fileTransfer rootFolder="/home/naotiki" accessType="SFTP" host="192.168.2.111" port="22" sshConfigId="2c20ac13-0b26-4f5e-9add-0ef59b1d9f8b" sshConfig="naotiki@192.168.2.111:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

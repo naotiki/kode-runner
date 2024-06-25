@@ -3,23 +3,24 @@ kotlin = "1.9.24"
 coroutines = "1.7.3"
 serialization = "1.6.0"
 rpc = "0.1.0"
-ksp="1.9.24-1.0.20"
+ksp = "1.9.24-1.0.20"
 docker-api = "3.3.6"
 koin = "3.5.0"
 yamlkt = "0.13.0"
 ktor = "2.3.12"
 slf4j = "2.0.9"
 nanoid = "2.0.0"
-kotest="5.8.0"
-logback="1.4.14"
-kotlin-logging="6.0.1"
-
+logback = "1.4.14"
+kotlin-logging = "6.0.1"
 kord = "0.11.1"
+
+kotest = "5.9.1"
 [libraries]
 # ktx
 ## coroutine
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 ## serialization
+kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "serialization" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-serialization-hocon = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-hocon", version.ref = "serialization" }
 kotlinx-serialization-cbor = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-cbor", version.ref = "serialization" }
@@ -58,12 +59,16 @@ ktor-network = { group = "io.ktor", name = "ktor-network", version.ref = "ktor" 
 
 yamlkt = { group = "net.mamoe.yamlkt", name = "yamlkt", version.ref = "yamlkt" }
 slf4j = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
-logback = { group = "ch.qos.logback",name="logback-classic", version.ref="logback"}
-kotlin-logging = {group= "io.github.oshai", name= "kotlin-logging", version.ref= "kotlin-logging"}
+logback = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
+kotlin-logging = { group = "io.github.oshai", name = "kotlin-logging", version.ref = "kotlin-logging" }
 nanoid = { group = "com.aventrix.jnanoid", name = "jnanoid", version.ref = "nanoid" }
+kord = { group = "dev.kord", name = "kord-core", version.ref = "kord" }
 
-kotest-runner={group="io.kotest",name="kotest-runner-junit5",version.ref="kotest"}
-kord = {group="dev.kord",name = "kord-core",version.ref="kord"}
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
+kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 [plugins]
 kotlinPluginSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -71,3 +76,7 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlinx-rpc = { id = "org.jetbrains.kotlinx.rpc.plugin", version.ref = "rpc" }
 kotlinx-rpc-platform = { id = "org.jetbrains.kotlinx.rpc.platform", version.ref = "rpc" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+
+
+kotest-multiplatform = { id = "io.kotest.multiplatform", version.ref = "kotest" }

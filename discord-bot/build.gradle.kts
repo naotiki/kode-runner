@@ -13,9 +13,11 @@ dependencies {
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.contentnegotiation)
-
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.serialization.cbor)
+
+    implementation(libs.kotlinx.serialization.core)
+    implementation(libs.yamlkt)
 
     implementation(libs.kotlinx.rpc.runtime.client)
     implementation(libs.kotlinx.rpc.runtime.serialization.cbor)
@@ -37,4 +39,12 @@ kotlin {
 
 application {
     mainClass.set("MainKt")
+
+}
+distributions{
+    main{
+        contents {
+            from("../config.example.yml")
+        }
+    }
 }

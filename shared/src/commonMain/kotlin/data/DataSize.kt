@@ -25,6 +25,10 @@ value class DataSize(val bytes: Long) {
         internal fun toLong(): Long {
             return 1L shl (10 * ordinal)
         }
+
+        companion object {
+            operator fun Long.get(unit: ByteUnit) = DataSize(this * unit.toLong())
+        }
     }
 
     override fun toString(): String {
@@ -37,7 +41,7 @@ value class DataSize(val bytes: Long) {
             byte = bytes / entry.toLong()
             unit = entry
         }
-        return "$byte${unit}"
+        return "$byte$unit"
     }
 
     companion object {
@@ -49,7 +53,9 @@ value class DataSize(val bytes: Long) {
                 }
             }
         }
-        fun fromString(str: String) = fromStringOrNull(str)!!
+
+        fun fromString(str: String) =
+            fromStringOrNull(str) ?: throw IllegalArgumentException("invalid data format. example: 100MB")
 
 
     }

@@ -6,7 +6,6 @@ import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.reply
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.rest.builder.message.modify.embed
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -125,6 +124,7 @@ class RunTextCommand : TextCommand("run") {
 
                 when (event) {
                     is RunnerEvent.LogBase -> {
+                        job?.join()
                         logList.add(event)
                         logList.sortBy { it.id }
                     }

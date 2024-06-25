@@ -8,29 +8,38 @@ import dev.kord.core.on
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
 import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.rpc.client.withService
 import kotlinx.rpc.serialization.cbor
 import kotlinx.rpc.transport.ktor.client.installRPC
 import kotlinx.rpc.transport.ktor.client.rpc
 import kotlinx.rpc.transport.ktor.client.rpcConfig
 import kotlinx.serialization.ExperimentalSerializationApi
+import model.AppConfig
+import net.mamoe.yamlkt.Yaml
+import net.mamoe.yamlkt.YamlBuilder
+import net.mamoe.yamlkt.YamlBuilder.*
 import service.RunnerService
 import java.io.File
-import java.util.*
 
 val client by lazy {
     HttpClient {
+
         installRPC()
+        defaultRequest {
+            url("http://${appConfig.serverHost}")
+        }
         install(ContentNegotiation) {
             json()
         }
     }
 }
+
 lateinit var runnerService: RunnerService
 
 
@@ -39,31 +48,38 @@ val slashCommands by lazy {
         Info()
     )
 }
+private val yaml = Yaml {
+    encodeDefaultValues = true
+    listSerialization = ListSerialization.BLOCK_SEQUENCE
+    mapSerialization = MapSerialization.BLOCK_MAP
+}
+val appConfig by lazy {
+    val f = File("config.yml")
+    if (!f.exists()) {
+        f.createNewFile()
+        f.writeText(yaml.encodeToString(AppConfig()))
+        throw NoSuchFileException(
+            f,
+            reason = "The config file,config.yml not found. please fill <token> in generated config.yml"
+        )
+    }
+    yaml.decodeFromString(AppConfig.serializer(), f.readText())
+}
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend fun main(args: Array<String>) {
-
-    val props = withContext(Dispatchers.IO) {
-        Properties().apply {
-            load(File("env.properties").inputStream())
-        }
-    }
-    val server = props["server"] as String
-    println(server)
     runnerService = client.rpc {
-        url {
-            takeFrom(server)
-            encodedPath = "/rpc"
-        }
+        println(appConfig.serverHost)
+        url("ws://${appConfig.serverHost}/rpc")
         rpcConfig {
             serialization {
                 cbor()
             }
         }
     }.withService<RunnerService>()
-    val env = props["discord.env"] as String
+    val env = appConfig.env
     println("Starting... on $env environment")
-    val kord = Kord(props["discord.${env}.token"] as String)
+    val kord = Kord(appConfig.tokens.getValue(env))
     println("Register slash-commands")
     slashCommands.forEach {
         println("\tRegister ${(it as? BaseCommand)?.name}")

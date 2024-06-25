@@ -1,0 +1,14 @@
+# 接続先Runnerのホストとポート
+serverHost: '127.0.0.1:8080'
+allowed: 
+  # コマンドの実行を許可するユーザーID (ギルドより優先)
+  users:
+    -
+  # コマンドの実行を許可するギルドID
+  guilds:
+    -
+env: dev
+tokens: 
+  dev: ''
+  beta: ''
+  prod: ''

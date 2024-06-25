@@ -9,6 +9,7 @@ import dev.kord.rest.builder.message.modify.embed
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.runBlocking
+import model.AppConfig
 import model.Configuration
 import model.RuntimeData
 import util.ApiCache.Companion.cache
@@ -24,7 +25,7 @@ class Info : SlashCommandWithGroup("info", "らんな〜情報") {
         inner class Limit : SubCommand("limit", "実行制限を取得します") {
             override suspend fun ChatInputCommandInteraction.onExecute() {
                 deferPublicResponse().respond {
-                    client.get("http://localhost:8080/config").body<Configuration>().run {
+                    client.get("/config").body<Configuration>().run {
                         embed {
                             title = "実行制限"
                             field {
@@ -77,7 +78,7 @@ class Info : SlashCommandWithGroup("info", "らんな〜情報") {
             override suspend fun ChatInputCommandInteraction.onExecute() {
                 deferPublicResponse().respond {
                     val runtimeDataList =
-                        client.get("http://localhost:8080/runtime").body<kotlin.collections.List<RuntimeData>>()
+                        client.get("/runtime").body<kotlin.collections.List<RuntimeData>>()
                     content = buildString {
                         appendLine("### 対応ランタイム一覧")
                         append(runtimeDataList.joinToString("\n") {
@@ -91,7 +92,7 @@ class Info : SlashCommandWithGroup("info", "らんな〜情報") {
         inner class Detail : SubCommand("detail", "実行可能なランタイム情報を詳細に出力します。") {
             private val runtime = opt(Opt.Require(Opt.String), "runtime", "取得するランタイム名") {
                 runBlocking {
-                    client.get("http://localhost:8080/runtime").body<kotlin.collections.List<RuntimeData>>()
+                    client.get("/runtime").body<kotlin.collections.List<RuntimeData>>()
                 }.forEach {
                     choice(it.name, it.id)
                 }
@@ -100,7 +101,7 @@ class Info : SlashCommandWithGroup("info", "らんな〜情報") {
             override suspend fun ChatInputCommandInteraction.onExecute() {
                 val runtime by runtime
                 deferPublicResponse().respond {
-                    val runtimeData = client.get("http://localhost:8080/runtime/${runtime}").body<RuntimeData>()
+                    val runtimeData = client.get("/runtime/${runtime}").body<RuntimeData>()
                     embed {
                         title = runtimeData.name
                         field {

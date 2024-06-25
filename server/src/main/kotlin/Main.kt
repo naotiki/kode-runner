@@ -25,29 +25,12 @@ import route.appRoute
 import java.util.zip.Deflater
 
 
-suspend fun main(args: Array<String>) {
-    embeddedServer(Netty, port = 8080) {
+fun main(args: Array<String>) {
+    embeddedServer(Netty, port = 8080,) {
         module()
     }.start(true)
- //   socketServer("127.0.0.1",9090)
 }
 
-suspend fun socketServer(host: String, port: Int) = coroutineScope {
-    val selectorManager = SelectorManager(Dispatchers.IO)
-    val serverSocket = aSocket(selectorManager).tcp().bind(host,port)
-    println("SocketServer is listening at ${serverSocket.localAddress}")
-    while (true){
-        val socket = serverSocket.accept()
-        println("Add Socket Connection $socket")
-        launch {
-            val receiveChannel = socket.openReadChannel()
-            //receiveChannel.readUntilDelimiter()
-        }
-    }
-
-}
-
-@OptIn(ExperimentalSerializationApi::class)
 private fun Application.module() {
     install(RPC)
 

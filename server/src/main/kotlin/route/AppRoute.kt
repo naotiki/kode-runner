@@ -114,7 +114,6 @@ fun Routing.appRoute() {
         rpcConfig {
             serialization { cbor() }
         }
-
         registerService<RunnerService> { ctx -> RunnerServiceImpl(ctx,sessionRepository) }
     }
 

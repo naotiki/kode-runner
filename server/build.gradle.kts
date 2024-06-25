@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.kotlinPluginSerialization)
     alias(libs.plugins.kotlinx.rpc.platform)
-    application
+    alias(libs.plugins.ktor)
 }
 
 group = "me.naotiki"
@@ -36,10 +36,6 @@ dependencies {
     implementation(libs.kotlinx.rpc.runtime.server)
     implementation(libs.kotlinx.rpc.runtime.serialization.cbor)
     implementation(libs.kotlinx.rpc.transport.ktor.server)
-
-  //  testImplementation(libs.koin.test)
-    testImplementation(kotlin("test"))
-    testImplementation(libs.kotest.runner)
 }
 
 tasks.test {
@@ -57,9 +53,10 @@ application {
 distributions{
     main{
         contents {
-            from("runtimes/"){
+            from("../runtimes/"){
                 into("runtimes/")
             }
+            from("../application.example.conf")
         }
     }
 }

@@ -1,19 +1,21 @@
 package command.builder.text
 
+import appConfig
 import command.text.RunTextCommand
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.reply
 import dev.kord.core.event.message.MessageCreateEvent
 
 
-private val textCommandList= listOf<TextCommand>(RunTextCommand())
-suspend fun MessageCreateEvent.textCommands(messageStr:String){
+private val textCommandList = listOf<TextCommand>(RunTextCommand())
+suspend fun MessageCreateEvent.textCommands(messageStr: String) {
     textCommandList.singleOrNull {
         messageStr.startsWith(it.prefix)
     }?.run {
-        if (this@textCommands.guildId!=Snowflake(1181064326166085772)&&message.author?.id != Snowflake(684655306764058644)){
+        if (this@textCommands.guildId !in appConfig.allowed.guilds && message.author?.id !in appConfig.allowed.users
+        ) {
             message.reply {
-                content="""まだNaotikiしか使えません
+                content = """このサーバーでの実行は許可されていません
                     |ごめんね
                 """.trimMargin()
             }
